@@ -283,7 +283,7 @@ function vers({aktiv = true, config = gewaehlteBuecher} = {}) {
 
 // den Abstand zwischen eingesendetem und aktiven Vers ausrechnen
 function check(ist, name) {
-    var auswertung = getAbstand(ist, versAlsListe);
+    var auswertung = getPunkte(ist, versAlsListe);
     console.log(name, "hat", toVersLString(ist), "getippt. \t Richtig wäre:", toVersLString(versAlsListe));
     return auswertung;
 }
@@ -295,15 +295,16 @@ function check(ist, name) {
 //     return (Math.abs(indexI - indexS));
 // }
 
-function getAbstand(ist, soll) {
-    var indexI = get1DIndex(ist);
-    var indexS = get1DIndex(soll);
+// berechnet die Punkte die ein Spieler bekommt (abhängig vom Ergebnis und Zeit)
+function getPunkte(ist, soll) {
+    var indexI = getAbstand(ist);
+    var indexS = getAbstand(soll);
     var entfernung = Math.abs(indexI - indexS);
-    var FistPossible = get1DIndex([gewaehlteBuecher[0], 0, 0])
+    var FistPossible = getAbstand([gewaehlteBuecher[0], 0, 0])
     var lastBook = gewaehlteBuecher[gewaehlteBuecher.length - 1];
     var lastKap = my_JSON_object[lastBook].chapters.length - 1;
     var lastVers = my_JSON_object[lastBook].chapters[lastKap].length - 1;
-    var LastPossible = get1DIndex([lastBook, lastKap, lastVers]);
+    var LastPossible = getAbstand([lastBook, lastKap, lastVers]);
     var distanceFirst = Math.abs(indexS - FistPossible);
     var distanceLast = Math.abs(LastPossible - indexS);
     var biggestPossibleDistance = distanceFirst > distanceLast ? distanceFirst : distanceLast;
@@ -316,7 +317,7 @@ function getAbstand(ist, soll) {
 }
 
 // den Abstand zwischen 1. Mose 1,1 und der geforderten Stelle berechnen
-function get1DIndex(l) {
+function getAbstand(l) {
     var punkte = 0;
     var kap = 0;
     for (var i = 0; i <= l[0]; i++) {
