@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Hier kann durch nur einen Knopfdruck ein zufälliger Bibelvers erzeugt werden der gesucht werden muss">
+    <title>Finde den Bibelvers</title>
+    <link rel="stylesheet" href="fstyles.css">
+</head>
+
+<body>
+    <div class="wrapper">
+        <div id="counter" class="animated" fons>
+            <ul id="Test" class="digits">
+                <li class='temp'>Den Button</li>
+                <li class='temp'>drücken damit</li>
+                <li class='temp'>ein zufälliger</li>
+                <li class='temp'>Bibelvers</li>
+                <li class='temp'>kommt</li>
+            </ul>
+        </div>
+        <button type="button" onclick="startAnimation()" title="ein neuer zufälliger Bibelvers wird generiert">
+            zufälligen Bibelvers erhalten
+        </button><br>
+        <select class='sel' id='buchwaehlen' onchange="generateKapitel()">
+            <option value=0 id="BuchOption">Buch</option>
+        </select>
+        <select class='sel' id='kapitelwaehlen' onchange="generateVers()">
+            <option value=0>Kapitel</option>
+        </select>
+        <select class='sel' id='verswaehlen'>
+            <option value=0>Vers</option>
+        </select><br>
+        <button type="button" class='but' id="versAbschicken" onclick="checkifRightSelected()" title="überprüfe ob der Eingegebene Bibelvers mit dem gesuchten übereinstimmt. Erhalte außerdem wie weit du entfernt warst.">
+            Lösung abschicken
+        </button><br>
+        <button type="button" class='but' id="versZeigen" onclick="showVers()" title="Zeige an wo der Bibelvers steht">
+            Lösung anzeigen
+        </button><br>
+    </div>
+    <div id="footer">
+        <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a>
+    </div>
+    <script src="fscript.js"></script>
+</body>

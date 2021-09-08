@@ -1,0 +1,10 @@
+#selectBooks {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    /* justify-content: space-between; */
+}
+
+.bookOpt {
+    margin: 0 10px;
+}

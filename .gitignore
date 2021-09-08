@@ -1,0 +1,4 @@
+__pycache__/
+backup/
+node_modules/
+package-lock.json

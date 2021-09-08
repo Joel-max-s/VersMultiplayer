@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Hier kann durch nur einen Knopfdruck ein zufälliger Bibelvers erzeugt werden der gesucht werden muss">
+    <title>Finde den Bibelvers</title>
+    <link rel="stylesheet" href="gstyles.css">
+</head>
+
+<body>
+    <div class="wrapper">
+        <p>Tool zum Erstellen einer Playlist</p>
+        <fieldset id="selectBooks">
+            <legend>Bücher auswählen</legend>
+    </div>
+    <div id="selectBookOptions">
+        <button id="selectAll" onclick="selAll(true)">Alle auswählen</button>
+        <button id="selectNone" onclick="selAll(false)">Alle abwählen</button>
+        <select class='sel' id='buecherwaehlen' onchange="generateBuecherList()">
+            <option value=0 id="BuchOption">Alle Bücher</option>
+        </select>
+    </div>
+
+    <select class='sel' id='buchwaehlen' onchange="generateKapitel()">
+        <option value=0 id="BuchOption">Buch</option>
+    </select>
+    <select class='sel' id='kapitelwaehlen' onchange="generateVers()">
+        <option value=0>Kapitel</option>
+    </select>
+    <select class='sel' id='verswaehlen'>
+        <option value=0>Vers</option>
+    </select><br>
+    <input id='PlayTime' type="number">
+    <button id="addToPlaylist" onclick="addToPlaylist()">zur Playlist hinzufügen</button>
+    <button id="shufflePlaylist" onclick="shufflePlaylist()">Playlist zufällig sortieren</button>
+    <button id="download" onclick="downloadPlaylist()">Playlist herunterladen</button>
+    </div>
+    <div id="footer">
+        <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a>
+    </div>
+    <script>
+        var counter = 0;
+        var verse = [];
+        var stelle = '';
+        var versAlsListe = [];
+        var request = new XMLHttpRequest();
+        request.open("GET", "de_schlachter-min.json", false);
+        request.send(null);
+        var my_JSON_object = JSON.parse(request.responseText);
+        var playlist = []
+        var auswahlmoeglichkeiten = [['AT', 'Altes Testament'], ['NT', 'Neues Testament'], ["Tora", "5 Bücher Mose"],['geschichte', 'Geschichtsbücher'], ['Lehre', 'Lehrbücher'], ['Propheten', 'alle Propheten'], ['gPropheten', 'große Propheten'], ['kPropheten', 'kleine Propheten'], ['Evangelien', 'Evangelien'], ['Apg', 'Apostelgeschichte'], ['paul', 'Paulusbriefe'], ['aBriefe', 'andere Briefe'], ['off', 'Offenbarung']]
+
+
+        // Select all checkboxes with the name 'settings' using querySelectorAll.
+        let gewaehlteBuecher = []
+
+        fillBookSelector()
+        fillBuecher()
+        fillAuswahlmoeglichkeiten()
+
+
+        function getBooks() {
+            var alleBuecher = []
+            for (var i = 0; i < my_JSON_object.length; i++) {
+                alleBuecher.push(my_JSON_object[i].name)
+            }
+            return alleBuecher
+        }
+
+        function fillBookSelector() {
+            const bookSelector = document.getElementById("selectBooks")
+            var allBooks = getBooks()
+            for (var i = 0; i < allBooks.length; i++) {
+                var div = document.createElement("div")
+                div.className = "bookOpt"
+                bookSelector.appendChild(div)
+                var oneBook = document.createElement("input")
+                oneBook.type = "checkBox"
+                oneBook.id = i
+                oneBook.value = i
+                oneBook.name = "selectBooks"
+                div.appendChild(oneBook)
+                var label = document.createElement("label")
+                label.htmlFor = oneBook.value //allBooks[i].toString().toLowerCase()
+                label.innerText = allBooks[i]
+                div.appendChild(label)
+            }
+
+            // Use Array.forEach to add an event listener to each checkbox.
+            var checkboxes = document.querySelectorAll("input[type=checkbox][name=selectBooks]");
+            checkboxes.forEach(checkbox => checkbox.addEventListener('change', () => fillBuecher()))
+        }
+
+        function fillBuecher() {
+            var checkboxes = document.querySelectorAll("input[type=checkbox][name=selectBooks]");
+            checkboxes.forEach(function (checkbox) {
+                gewaehlteBuecher =
+                    Array.from(checkboxes) // Convert checkboxes to an array to use filter and map.
+                        .filter(i => i.checked) // Use Array.filter to remove unchecked checkboxes.
+                        .map(i => parseInt(i.value)) // Use Array.map to extract only the checkbox values from the array of objects.
+            });
+
+            var select = document.getElementById('buchwaehlen');
+
+            var temp = document.getElementsByClassName('book');
+            while (temp[0]) {
+                temp[0].parentNode.removeChild(temp[0]);
+            }
+
+            for (var i = 0; i < gewaehlteBuecher.length; i++) {
+                var opt = my_JSON_object[gewaehlteBuecher[i]].name;
+                var el = document.createElement("option");
+                el.textContent = opt;
+                el.value = gewaehlteBuecher[i];
+                el.className = 'book';
+                select.appendChild(el);
+            }
+            var bOption = document.getElementById('BuchOption');
+            bOption.value = gewaehlteBuecher[0];
+        }
+
+        function generateKapitel() {
+            clearSelect(document.getElementById('kapitelwaehlen'));
+            clearSelect(document.getElementById('verswaehlen'));
+            var buch = document.getElementById('buchwaehlen').value;
+            console.log(buch);
+            var vers = document.getElementById('kapitelwaehlen');
+            for (var i = 0; i < my_JSON_object[buch].chapters.length; i++) {
+                var opt = i + 1;
+                var el = document.createElement("option");
+                el.textContent = opt;
+                el.value = i;
+                vers.appendChild(el);
+            }
+        }
+
+        function generateVers() {
+            clearSelect(document.getElementById('verswaehlen'));
+            var buch = document.getElementById('buchwaehlen').value;
+            var kapitel = document.getElementById('kapitelwaehlen').value;
+            console.log(vers);
+            var vers = document.getElementById('verswaehlen');
+            for (var i = 0; i < my_JSON_object[buch].chapters[kapitel].length; i++) {
+                var opt = i + 1;
+                var el = document.createElement("option");
+                el.textContent = opt;
+                el.value = i;
+                vers.appendChild(el);
+            }
+        }
+
+        function addToPlaylist() {
+            var time = document.getElementById('PlayTime').value
+            var selection = gewaehlteBuecher
+            var versAsL = [parseInt(document.getElementById('buchwaehlen').value), parseInt(document.getElementById('kapitelwaehlen').value), parseInt(document.getElementById('verswaehlen').value)]
+            const pElem = { "zeit": time, "auswahl": selection, "versL": versAsL, "versS": "" }
+            console.log(pElem)
+            playlist.push(pElem)
+        }
+
+        function clearSelect(selected) {
+            for (var i = selected.length; i > 0; i--) {
+                selected.remove(i);
+            }
+        }
+
+        function downloadPlaylist() {
+            var filename = "ply.json"
+            var text = JSON.stringify(playlist)
+            var element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+            element.setAttribute('download', filename);
+
+            element.style.display = 'none';
+            document.body.appendChild(element);
+
+            element.click();
+
+            document.body.removeChild(element);
+        }
+
+        function selAll(all) {
+            var checkboxes = document.querySelectorAll("input[type=checkbox][name=selectBooks]");
+            checkboxes.forEach(function (checkbox) {
+                checkbox.checked = all;
+            });
+            fillBuecher()
+        }
+
+        function shufflePlaylist() {
+            playlist = shuffleArray(playlist)
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array
+        }
+
+        function fillAuswahlmoeglichkeiten() {
+            var select = document.getElementById('buecherwaehlen');
+            for (var i = 0; i < auswahlmoeglichkeiten.length; i++) {
+                // console.log(i);
+                var opt = auswahlmoeglichkeiten[i][1];
+                var el = document.createElement("option");
+                el.textContent = opt;
+                el.value = auswahlmoeglichkeiten[i][0];
+                select.appendChild(el);
+            }
+        }
+
+        function generateBuecherList() {
+            option = document.getElementById('buecherwaehlen').value
+            switch (option) {
+                case "AT":
+                    gewaehlteBuecher = spans(0, 38);
+                    break;
+                case "NT":
+                    gewaehlteBuecher = spans(39, 65);
+                    break;
+                case "Tora":
+                    gewaehlteBuecher = spans(0, 4);
+                    break;
+                case "geschichte":
+                    gewaehlteBuecher = spans(5, 16);
+                    break;
+                case "Lehre":
+                    gewaehlteBuecher = spans(17, 21);
+                    break;
+                case "Propheten":
+                    gewaehlteBuecher = spans(22, 38);
+                    break;
+                case "gPropheten":
+                    gewaehlteBuecher = spans(22, 26);
+                    break;
+                case "kPropheten":
+                    gewaehlteBuecher = spans(27, 38);
+                    break;
+                case "Evangelien":
+                    gewaehlteBuecher = spans(39, 42);
+                    break;
+                case "Apg":
+                    gewaehlteBuecher = spans(43, 43);
+                    break;
+                case "paul":
+                    gewaehlteBuecher = spans(44, 56);
+                    break;
+                case "aBriefe":
+                    gewaehlteBuecher = spans(57, 64);
+                    break;
+                case "off":
+                    gewaehlteBuecher = spans(65, 65);
+                    break;
+                default:
+                    gewaehlteBuecher = spans(0, 65);
+                    break;
+            }
+            console.log(gewaehlteBuecher)
+            var checkboxes = document.querySelectorAll("input[type=checkbox][name=selectBooks]")
+            for (var i = 0; i < checkboxes.length; i++) {
+                checkboxes[i].checked = gewaehlteBuecher.includes(i)
+            }
+            fillBuecher()
+        }
+
+        function spans(i, j) {
+            var list = [];
+            for (let index = i; index <= j; index++) {
+                list.push(index);
+            }
+            return list;
+        }
+
+    </script>
+</body>

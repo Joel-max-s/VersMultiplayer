@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin</title>
+    <style>
+        body {
+            font-size: 200%;
+            text-align: center;
+        }
+
+        #tables {
+            font-family: Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            font-size: 1.5rem;
+            margin: auto;
+            text-align: center;
+        }
+
+        #tables td,
+        #tables th {
+            border: 1px solid #ddd;
+            padding: 8px;
+            padding-top: 0px;
+            padding-bottom: 0px;
+            max-width: 100%;
+        }
+
+        #tables tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        #tables tr:hover {
+            background-color: #ddd;
+        }
+
+        #tables th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .noborder td {
+            border: 0;
+        }
+
+        /* Style the tab */
+        .tab {
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+
+        /* Style the buttons inside the tab */
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            font-size: 17px;
+        }
+
+        /* Change background color of buttons on hover */
+        .tab button:hover {
+            background-color: #ddd;
+        }
+
+        /* Create an active/current tablink class */
+        .tab button.active {
+            background-color: #ccc;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="tab">
+        <button class="tablinks" onclick="openCity(event, 'Spiel')" id="defaultOpen">Spiel</button>
+        <button class="tablinks" onclick="openCity(event, 'Einstellungen')">Einstellungen</button>
+    </div>
+
+    <div id="Spiel" class="tabcontent">
+        <p id='vers'></p>
+        <button id='but' onclick="generateVers()">Vers Generieren</button>
+        <button id='fertig' onclick="auswertung()">Vers abschließen</button>
+        <select class='sel' id='buecherwaehlen' onchange="sendAuswahl()">
+            <option value=0 id="BuchOption">Alle Bücher</option>
+        </select>
+        
+        <p id='TimerParagraph'>Zeit übrig: <span id='Timer'></span></p>
+        <p id='afterTable'></p>
+    </div>
+
+    <div id="Einstellungen" class="tabcontent">
+        <input id='timertime' type="number">
+        <button id='increaseTime' onclick="increaseTime()">Zeit erhöhen</button>
+        <button id='loadPlaylist' onclick="loadPlaylist()">Playlist laden</button>
+        <input type="file" style="display: none;" id="loadFile" accept=".json" onchange="sendPlaylist(this.files)" />
+        <button id='resetPoints' onclick="resetPoints()">Punkte zurück setzen</button>
+    </div>
+
+    <a href="/datenschutz" style="font-size: 14px">Datenschutzerklärung</a>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="tabellen.js"></script>
+
+    <script>
+        var socket = io.connect();
+        var messages = document.getElementById('verse');
+        var button = document.getElementById('but');
+        var timer = document.getElementById('Timer');
+        var spieler = [];
+        var auswahlmoeglichkeiten = [];
+        var timerSet = false;
+
+        document.getElementById("defaultOpen").click();
+
+        function openCity(evt, cityName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(cityName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        function generateVers() {
+            socket.emit('vers income', 'hier soll dann mal später ein vers stehen');
+            timerSet = document.getElementById('timertime').value == '' ? false : true;
+            socket.emit('startTimer', document.getElementById('timertime').value);
+        }
+
+        function increaseTime() {
+            if (timerSet) {
+                socket.emit('increaseTime', document.getElementById('timertime').value);
+            }
+            else {
+                socket.emit('startTimer', document.getElementById('timertime').value);
+                timerSet = true;
+            }
+        }
+
+        function loadPlaylist() {
+            var fileInput = document.getElementById('loadFile');
+            fileInput.click();
+        }
+
+        function sendPlaylist(files) {
+            var file = files[0];
+            var fr = new FileReader();
+            fr.onload = function () {
+                var data = JSON.parse(fr.result)
+                socket.emit('send Playlist', data)
+            }
+            fr.readAsText(file);
+        }
+
+        function resetPoints() {
+            socket.emit('resetPoints', '');
+        }
+
+        function sendAuswahl() {
+            var opt = document.getElementById('buecherwaehlen').value;
+            console.log(opt);
+            socket.emit('Ausgewaehlt', opt);
+        }
+
+        function fillAuswahlmoeglichkeiten() {
+            var select = document.getElementById('buecherwaehlen');
+            for (var i = 0; i < auswahlmoeglichkeiten.length; i++) {
+                console.log(i);
+                var opt = auswahlmoeglichkeiten[i];
+                var el = document.createElement("option");
+                el.textContent = opt;
+                el.value = auswahlmoeglichkeiten[i];
+                select.appendChild(el);
+            }
+        }
+
+        function auswertung() {
+            socket.emit('abschluss', '');
+        }
+
+        socket.on('connect', msg => {
+            console.log(socket.id);
+            socket.emit('init generator', socket.id);
+            socket.emit('getAuswahlmoeglichkeiten', '');
+
+
+            socket.on('getAuswahlmoeglichkeiten', msg => {
+                auswahlmoeglichkeiten = msg;
+                fillAuswahlmoeglichkeiten();
+            });
+
+            socket.on('vers income', function (msg) {
+                var item = document.getElementById('vers');
+                item.innerText = msg;
+            });
+
+            socket.on('spieler income', msg => {
+                spieler = msg;
+                if (document.getElementById('tables')) {
+                    removeTable();
+                }
+                if (spieler.length > 0) {
+                    generateTable();
+                }
+            });
+
+            /* socket.on('tipp income', msg => {
+                for(var i = 0; i < spieler.length; i++) {
+                    if(spieler[i].id === msg.id) {
+                        spieler[i] = msg;
+                        removeTable();
+                        generateTable();
+                        return;
+                    }
+                }
+            });*/
+
+            socket.on('abschluss', msg => {
+                spieler = msg;
+                if (document.getElementById("tables")) {
+                    removeTable();
+                    generateTable();
+                }
+                timerSet = false;
+            });
+
+            socket.on('timer', msg => {
+                timer.innerText = msg;
+                if (msg != 'keine Zeitbegrenzung') {
+                    timerSet = true;
+                }
+            });
+        })
+    </script>
+</body>
+
+</html>

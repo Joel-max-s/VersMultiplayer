@@ -1,0 +1,12 @@
+{
+    "name": "versspiel-multiplayer",
+    "version": "0.0.1",
+    "description": "vers suchen multiplayer modus",
+    "dependencies": {
+        "express": "^4.17.1",
+        "file-saver": "^2.0.5",
+        "fs": "^0.0.1-security",
+        "socket.io": "^4.1.1",
+        "xmlhttprequest": "^1.8.0"
+    }
+}

@@ -1,0 +1,25 @@
+<div class="tab">
+    <button class="tablinks" onclick="openCity(event, 'Vers')" id="defaultOpen">Vers</button>
+    <button class="tablinks" onclick="openCity(event, 'Tabelle')">Tabelle</button>
+</div>
+<div id='Vers' class='tabcontent'>
+    <p id='vers'></p>
+    <p class='middle'>Zeit übrig: <span id='timer'>keine Zeitbegrenzung</span></p>
+    <select class='sel' id='buchwaehlen' onchange="generateKapitel()">
+        <option value=0 id="BuchOption">Buch</option>
+    </select>
+    <select class='sel' id='kapitelwaehlen' onchange="generateVers()">
+        <option value=0>Kapitel</option>
+    </select>
+    <select class='sel' id='verswaehlen'>
+        <option value=0>Vers</option>
+    </select>
+
+    <button id='but' onclick="Senden()">Absenden</button>
+    <p id='hinweis'></p>
+</div>
+
+<div id='Tabelle' class='tabcontent'>
+    <p></p>
+    <p id='afterTable'></p>
+</div>

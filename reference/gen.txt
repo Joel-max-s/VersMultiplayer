@@ -1,0 +1,32 @@
+/*fs.writeFileSync(__dirname + '/nice.txt', generate());
+fs.writeFileSync(__dirname + '/nice2.txt', generate2());
+
+function generate() {
+    var str = '[';
+    for(var i = 0; i < 66; i++) {
+        str+='[';
+        var len = Object.keys(my_JSON_object[i].chapters).length
+        for(var j = 0; j < len; j++) {
+            var chaplen = Object.keys(my_JSON_object[i].chapters[j]).length;
+            str += chaplen.toString();
+            if(j != len - 1) {
+                str += ', '
+            }
+        }
+        str += i == 65 ? ']' : '], ';
+    }
+    str += ']';
+    return str;
+}
+
+function generate2() {
+    var str = '[';
+    for(var i = 0; i < 66; i++) {
+        str += '"' + my_JSON_object[i].name + '"';
+        if(i != 65) {
+            str += ', '
+        }
+    }
+    str += ']';
+    return str;
+}*/
