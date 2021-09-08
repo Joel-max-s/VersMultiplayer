@@ -239,14 +239,16 @@ function increaseTimer(msg) {
 function startTimer(msg, socket) {
     if (msg != null && parseInt(msg) > 0 && msg != '') {
         timeLeft = parseInt(msg);
+        io.emit('timer', timeLeft + ' Sekunden');
         var interval = 1000;
         var test = setInterval(() => {
-            io.emit('timer', timeLeft + ' Sekunden');
             timeLeft--;
-            if (timeLeft < 0) {
+            if (timeLeft <= 0) {
+                console.log("Zeit ist abgelaufen")
                 clearInterval(test);
                 abschluss(socket);
             }
+            io.emit('timer', timeLeft + ' Sekunden');
         }, interval);
     }
     else {
