@@ -1,5 +1,6 @@
 /*
     TODOS:
+    Ton wenn die Zeit fast abgelaufen ist (erstmal nur bei Host, später vielleicht bei Client)
     bessere Dateistruktur und Dateinamen
     Timer ablaufen lassen --> Timer fixen das der nicht doppelt so schnell ablaufen kann
     Automatische nächste Runde -> aber nur wenn in einstellungen konfiguriert oder in Playlist so vorgesehen
