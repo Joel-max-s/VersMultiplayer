@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <input id="roomID" type="number" min="0" max="9999">
+    <button type="submit" onclick="joinRoom()">Raum beitreten</button><br>
+    <input id="message" type="text">
+    <button id="sendMessage" onclick="sendM()">absenden</button>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io.connect()
+        var roomID
+        socket.on('connect', msg => {
+            console.log(socket.id)
+            socket.on('joined room', msg => {
+                console.log("joined")
+                roomID = msg.roomID
+            })
+            socket.on('message', msg => {
+                console.log('m')
+                var txt = document.createElement("p")
+                txt.innerText = msg.text
+                document.body.appendChild(txt)
+            })
+            socket.on('timer', msg => {
+                console.log(msg)
+            })
+        })
+
+        function joinRoom() {
+            var roomID = document.getElementById("roomID").value
+            console.log(roomID)
+            //rid -> Raum ID, pid -> Personen ID (Die noch später im Local-storage speichern und anders generieren)
+            socket.emit("join Room", {rid: roomID, pid: Math.random().toString(), sid: socket.id})
+        }
+
+        function sendM() {
+            console.log('abc')
+            console.log(roomID)
+            const txt = document.getElementById("message").value
+            socket.emit('message', {text: txt, room: roomID.toString()})
+        }
+    </script>
+</body>
+</html>

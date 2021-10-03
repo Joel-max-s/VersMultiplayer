@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spiel konfigurieren</title>
+</head>
+<body>
+    <p id="ROOMID"></p>
+    <input id="message" type="text">
+    <button id="sendMessage" onclick="sendM()">absenden</button>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io.connect()
+        var firstConnection = true
+        var roomID
+        socket.on('connect', msg => {
+            console.log(socket.id)
+            if(firstConnection) {
+                socket.emit("create Room", {})
+                firstConnection = false
+            }
+            socket.on('room created', msg => {
+                roomID = msg.roomID
+                console.log(msg.roomID)
+            })
+            socket.on('message', msg => {
+                console.log('msg rcvd')
+                var txt = document.createElement("p")
+                txt.innerText = msg.text
+                document.body.appendChild(txt)
+            })
+        })
+
+        function sendM() {
+            console.log('abc')
+            console.log(roomID)
+            const txt = document.getElementById("message").value
+            socket.emit('message', {text: txt, room: roomID.toString()})
+        }
+    </script>
+</body>
+</html>

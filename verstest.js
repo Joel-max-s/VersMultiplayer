@@ -52,6 +52,9 @@ var playListactive = true;
 app.use(express.static('public'));
 var publicPath = path.join(__dirname , "public/")
 app.get('/', (req, res) => {
+    res.sendFile(publicPath + '/auswahl.html');
+});
+app.get('/spielen', (req, res) => {
     res.sendFile(publicPath + '/versAnzeigen.html');
 });
 app.get('/generieren', (req, res) => {
@@ -342,16 +345,8 @@ function getAbstand(l) {
             }
         }
     }
-    // console.log(kap)
     return punkte;
 }
-
-// function generatePlaylist() {
-//     for (var i = 0; i < playlistConfig.length; i++) {
-//         playlistConfig[i].auswahl = (playlistConfig[i].auswahl === null) ? spans(0, 65) : playlistConfig[i].auswahl;
-//         playlistConfig[i].vers = (playlistConfig[i].vers === null) ? vers(playlistConfig[i].auswahl) : playlistConfig[i].vers;
-//     }
-// }
 
 // auswahlmöglichkeiten für den Generator
 function generateBuecherList(auswahl) {
