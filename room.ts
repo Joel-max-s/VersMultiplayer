@@ -4,6 +4,7 @@
 
 import { Player, Playlist } from "./datatypes";
 import { getIO } from "./server";
+import { VerseHandler } from "./verses";
 
 export class Room {
     id: string
@@ -16,6 +17,7 @@ export class Room {
     playlist: Array<Playlist>
     playlistActive: boolean
     countdown: NodeJS.Timeout = null
+    vh : VerseHandler = new VerseHandler()
 
     constructor(id: string) {
         this.id = id
@@ -46,6 +48,9 @@ export class Room {
     }
 
     private startTimer(time: number) {
+        //temp
+        console.log(this.vh.generateVerse())
+
         this.timeLeft = time
         this.countdown = setInterval(() => {
             getIO().to(this.id).emit('timer', this.timeLeft + ' Sekunden')

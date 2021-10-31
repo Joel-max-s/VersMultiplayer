@@ -6,10 +6,12 @@ exports.__esModule = true;
 exports.Room = void 0;
 var datatypes_1 = require("./datatypes");
 var server_1 = require("./server");
+var verses_1 = require("./verses");
 var Room = /** @class */ (function () {
     function Room(id) {
         this.players = new Map();
         this.countdown = null;
+        this.vh = new verses_1.VerseHandler();
         this.id = id;
     }
     // wenn noch kein Timer gestartet wurde einen starten
@@ -36,6 +38,8 @@ var Room = /** @class */ (function () {
     };
     Room.prototype.startTimer = function (time) {
         var _this = this;
+        //temp
+        console.log(this.vh.generateVerse());
         this.timeLeft = time;
         this.countdown = setInterval(function () {
             (0, server_1.getIO)().to(_this.id).emit('timer', _this.timeLeft + ' Sekunden');
