@@ -3,6 +3,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { Player, PlaylistElem } from "./datatypes";
 import { Room } from "./room";
+import { getRandomNumber } from "./utils";
 
 const app = express();
 const http = createServer(app);
@@ -16,7 +17,7 @@ console.log('JEAH')
 io.on("connection", (socket) => {
   socket.on('create Room', () => {
       // später noch überprüfen ob es die schon gibt
-      var roomID: string = getRandomInt(10000).toString()
+      var roomID: string = getRandomNumber(10000).toString()
       socket.join(roomID.toString())
       socket.emit('room created', {roomID: roomID})
       rooms.set(roomID, new Room(roomID))
@@ -40,10 +41,6 @@ io.on("connection", (socket) => {
 });
 
 http.listen(3000);
-
-function getRandomInt(max: number) {
-    return Math.floor(Math.random() * max)
-}
 
 export function getIO() {
     return io
