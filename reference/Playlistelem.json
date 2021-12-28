@@ -1,0 +1,20 @@
+{
+    "time": 100,
+    "selection": [
+        {
+            "book" : 5,
+            "chapters": [
+                {
+                    "chapter": 23,
+                    "verses" : [0,1,2,3,4,5]
+                },
+                {
+                    "chapter": 27
+                }
+            ] 
+        },
+        {
+            "book": 23
+        }
+    ] 
+}

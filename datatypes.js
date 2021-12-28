@@ -3,6 +3,7 @@ exports.__esModule = true;
 exports.Player = void 0;
 var Player = /** @class */ (function () {
     function Player(id, sid) {
+        this.currentTipPoints = 0;
         this.id = id;
         this.socketid = sid;
     }

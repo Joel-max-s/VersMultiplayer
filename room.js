@@ -6,13 +6,16 @@ exports.__esModule = true;
 exports.Room = void 0;
 var datatypes_1 = require("./datatypes");
 var server_1 = require("./server");
+var utils_1 = require("./utils");
 var verses_1 = require("./verses");
 var Room = /** @class */ (function () {
     function Room(id) {
         this.players = new Map();
+        this.selectedBooks = (0, utils_1.generateBooksList)();
+        this.playlistActive = false;
         this.countdown = null;
-        this.vh = new verses_1.VerseHandler();
         this.id = id;
+        this.vh = new verses_1.VerseHandler({});
     }
     // wenn noch kein Timer gestartet wurde einen starten
     // wenn der Timer bereits läuft ihn erhöhen oder verringern, bei bedarf auch stoppen
@@ -35,6 +38,17 @@ var Room = /** @class */ (function () {
     };
     Room.prototype.removePlayer = function (player) {
         this.players["delete"](player.id);
+    };
+    Room.prototype.finishVerse = function () {
+        this.controlTimer({ endTimer: true });
+        this.players.forEach(function (player) {
+            player.allowedToSend = false;
+            player.points += player.currentTipPoints;
+            // TODO: send result
+            // getIO().to(this.id).emit('tipp income', {eval})
+        });
+        // TODO: better solution, just points maybe
+        // getIO().to(this.id).emit('finish verse', this.players)
     };
     Room.prototype.startTimer = function (time) {
         var _this = this;

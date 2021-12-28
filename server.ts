@@ -1,7 +1,7 @@
 import * as express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { Player, Playlist } from "./datatypes";
+import { Player, PlaylistElem } from "./datatypes";
 import { Room } from "./room";
 
 const app = express();
@@ -14,7 +14,7 @@ app.use(express.static('public'))
 console.log('JEAH')
 
 io.on("connection", (socket) => {
-  socket.on('create Room', msg => {
+  socket.on('create Room', () => {
       // später noch überprüfen ob es die schon gibt
       var roomID: string = getRandomInt(10000).toString()
       socket.join(roomID.toString())
@@ -22,7 +22,7 @@ io.on("connection", (socket) => {
       rooms.set(roomID, new Room(roomID))
   })
 
-  socket.on("join Room", msg => {
+  socket.on("join Room", (msg: {rid: string, pid: string, sid: string}) => {
       var room: string = msg.rid
       var player: string = msg.pid
       var socketid : string = msg.sid
@@ -34,7 +34,7 @@ io.on("connection", (socket) => {
       }
   })
 
-  socket.on('message', msg => {
+  socket.on('message', (msg: {room: string, text: string}) => {
       io.to(msg.room).emit('message', {text: msg.text})
   })
 });
