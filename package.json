@@ -14,6 +14,8 @@
         "typescript": "^4.4.3"
     },
     "scripts": {
-        "start": "tsc server.ts && node server.js"
+        "build" : "tsc server.ts",
+        "serve": "node server.js",
+        "dev": "tsc server.ts && node server.js"
     }
 }

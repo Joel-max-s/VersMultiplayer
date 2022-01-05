@@ -13,7 +13,7 @@ export class Player {
     connected: boolean
     team: number
     room: string
-    history: Array<Array<Number>>
+    history: Array<Array<number>>
     currentTipPoints: number = 0
 
     constructor(id: string, sid: string) {

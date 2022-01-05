@@ -2,6 +2,7 @@
 // alle Spieler tracken
 // die Verse Senden
 // sich um die Zeit kümmern
+// beim Zeitablauf ergebnisse absenden
 exports.__esModule = true;
 exports.Room = void 0;
 var datatypes_1 = require("./datatypes");
@@ -12,11 +13,21 @@ var Room = /** @class */ (function () {
     function Room(id) {
         this.players = new Map();
         this.selectedBooks = (0, utils_1.generateBooksList)();
-        this.playlistActive = false;
         this.countdown = null;
         this.id = id;
-        this.vh = new verses_1.VerseHandler({});
+        this.vh = new verses_1.VerseHandler();
     }
+    //TODO: build game loop
+    Room.prototype.startVerse = function () {
+        this.resetTipPoints();
+        this.vh.generateVerse();
+        return this.vh.verse.text;
+    };
+    Room.prototype.stopVerse = function () {
+        this.players.forEach(function (player) {
+            player.points += player.currentTipPoints;
+        });
+    };
     // wenn noch kein Timer gestartet wurde einen starten
     // wenn der Timer bereits läuft ihn erhöhen oder verringern, bei bedarf auch stoppen
     Room.prototype.controlTimer = function (_a) {
@@ -40,23 +51,29 @@ var Room = /** @class */ (function () {
         this.players["delete"](player.id);
     };
     Room.prototype.finishVerse = function () {
+        var results = [];
         this.controlTimer({ endTimer: true });
         this.players.forEach(function (player) {
             player.allowedToSend = false;
             player.points += player.currentTipPoints;
+            var resElem = {
+                "name": player.name,
+                "points": player.points,
+                "currentTipPoints": player.currentTipPoints
+            };
+            results.push(resElem);
             // TODO: send result
             // getIO().to(this.id).emit('tipp income', {eval})
         });
         // TODO: better solution, just points maybe
         // getIO().to(this.id).emit('finish verse', this.players)
+        return results;
     };
     Room.prototype.startTimer = function (time) {
         var _this = this;
-        //temp
-        console.log(this.vh.generateVerse());
         this.timeLeft = time;
         this.countdown = setInterval(function () {
-            (0, server_1.getIO)().to(_this.id).emit('timer', _this.timeLeft + ' Sekunden');
+            (0, server_1.getIO)()["in"](_this.id).emit('timer', _this.timeLeft + ' Sekunden');
             if (_this.timeLeft > 0)
                 _this.timeLeft--;
             else if (_this.timeLeft <= 0) {
@@ -75,6 +92,32 @@ var Room = /** @class */ (function () {
         clearInterval(this.countdown);
         this.countdown = null;
         this.timeLeft = 0;
+    };
+    Room.prototype.resetTipPoints = function () {
+        this.players.forEach(function (player) {
+            player.currentTipPoints = 0;
+            player.allowedToSend = true;
+        });
+    };
+    Room.prototype.getCurrentVerse = function () {
+        var v = this.vh.verse.text;
+        var verse = v != null ? v : "Aktuell ist noch kein Vers vorhanden";
+        return (verse);
+    };
+    Room.prototype.handleGuess = function (playerId, guess) {
+        var msg = "";
+        var player = this.players.get(playerId);
+        if (player.allowedToSend) {
+            var points = this.vh.calculatePoints(guess);
+            player.allowedToSend = false;
+            msg = this.vh.stringifyverseList(guess) + " wurde gesendet.";
+        }
+        else {
+            // @ts-ignore
+            var verse = this.vh.stringifyverseList(player.history.at(-1));
+            msg = verse + " wurde bereits gesendet. Nur der die erste Einsendung wird gewertet";
+        }
+        return msg;
     };
     return Room;
 }());

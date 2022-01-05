@@ -36,9 +36,9 @@ export class VerseHandler{
         return this.bible[v[0]].name + " " + (v[1] + 1).toString() + "," + (v[2] + 1).toString();
     }
 
-    calculatePoints(is : Array<number>, target: Array<number>, timeBonus : number) {
+    calculatePoints(is : Array<number>) {
         var indexI = this.getDistance(is);
-        var indexS = this.getDistance(target);
+        var indexS = this.getDistance(this.verse.list);
         var distance = Math.abs(indexI - indexS);
         var fistPossible = this.getDistance([this.availableBooks[0], 0, 0]);
         var lastBook = this.availableBooks[this.availableBooks.length - 1];
@@ -50,9 +50,9 @@ export class VerseHandler{
         var biggestPossibleDistance = distanceFirst > distanceLast ? distanceFirst : distanceLast;
         var weight = 4000 / biggestPossibleDistance;
         var points = 4000 - (weight * distance);
-        points = (distance == 0) ? points * (1.5 + (2 * timeBonus)) : points * (0.5 + timeBonus);
+        points = (distance == 0) ? points * (1.5 + (2 * this.timeBonus)) : points * (0.5 + this.timeBonus);
         points = Math.ceil(points);
-        timeBonus = (distance == 0) ? timeBonus * 0.7 : timeBonus;
+        this.timeBonus = (distance == 0) ? this.timeBonus * 0.7 : this.timeBonus;
         return ({ abstand: distance, punkte: points });
     }
 
