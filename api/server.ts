@@ -7,7 +7,10 @@ import { getRandomNumber } from "./utils";
 
 const app = express();
 const http = createServer(app);
-const io = new Server(http, { pingTimeout: 120000, pingInterval: 5000 });
+const io = new Server(http, { pingTimeout: 120000, pingInterval: 5000, cors:{
+    origin: "http://192.168.178.40:5000",
+    methods: ["GET", "POST"]
+} });
 var rooms = new Map<string, Room>()
 
 app.use(express.static('public'))
@@ -15,6 +18,12 @@ app.use(express.static('public'))
 console.log('JEAH')
 
 io.on("connection", (socket) => {
+
+    socket.on('foo', () => {
+        socket.emit('bar', 'Hello from express :)')
+    })
+
+
     socket.on('create Room', () => {
         // später noch überprüfen ob es die schon gibt
         var roomID: string = getRandomNumber(10000).toString()
