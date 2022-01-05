@@ -8,12 +8,9 @@ var room_1 = require("./room");
 var utils_1 = require("./utils");
 var app = express();
 var http = (0, http_1.createServer)(app);
-var io = new socket_io_1.Server(http, { pingTimeout: 120000, pingInterval: 5000, cors: {
-        origin: "http://192.168.178.40:5000",
-        methods: ["GET", "POST"]
-    } });
+var io = new socket_io_1.Server(http, { pingTimeout: 120000, pingInterval: 5000 });
 var rooms = new Map();
-app.use(express.static('public'));
+app.use(express.static('client/public'));
 console.log('JEAH');
 io.on("connection", function (socket) {
     socket.on('foo', function () {
