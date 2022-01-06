@@ -18,7 +18,8 @@
         }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = (test) => {
+        console.log(test)
         if (text.trim().length >= min) {
             const newUser = {
                 // id: uuidv4(),
@@ -30,7 +31,7 @@
         }
     };
 
-    const socket = io('ws://localhost:3000')
+    const socket = io()
     
     socket.on("connect", () => {
         socket.emit('foo')
@@ -43,7 +44,7 @@
 
 <div>
     <header>
-        <h2>HELLO</h2>
+        <h2>HELLO TEST2</h2>
     </header>
     <form on:submit|preventDefault={handleSubmit}>
         <div class="input-group">
@@ -53,7 +54,8 @@
                 on:input={handleInput}
                 placeholder="Username"
             />
-            <Button disabled={btnDisabled} type="submit">Send</Button>
+            <Button disabled={btnDisabled} type="submit">create</Button>
+            <Button disabled={btnDisabled} type="submit">join</Button>
         </div>
     </form>
     {#if message}
@@ -80,6 +82,7 @@
         padding: 8px 10px;
         border-radius: 8px;
         margin-top: 15px;
+        gap: 3px;
     }
     input {
         flex-grow: 2;
