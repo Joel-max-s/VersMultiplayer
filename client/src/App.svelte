@@ -1,7 +1,11 @@
 <script>
 	import Login from "./components/Login.svelte";
 	import Gamescreen from "./components/Gamescreen.svelte";
-	import { User } from "./stores";
+	import Adminscreen from "./components/AdminScreen.svelte";
+	import { User, socket } from "./stores";
+	
+	const client = io()
+	$socket = client
 </script>
 
 
@@ -11,11 +15,18 @@
 		<Login/>
 	</div>
 		
-	{:else}
+	{:else if $User.type==="user"}
 	<div class="gamescreen">
 		<Gamescreen />
 		<div class="break"></div>
-		<p>{$User.username}</p>
+		<p>{$User.username}, {$User.type}</p>
+	</div>
+	
+	{:else if $User.type==="admin"}
+	<div class="adminscreen">
+		<Adminscreen />
+		<div class="break"></div>
+		<p>{$User.type}</p>
 	</div>
 	{/if}
 </main>

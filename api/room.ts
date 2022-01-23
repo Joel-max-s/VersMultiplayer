@@ -3,13 +3,14 @@
 // sich um die Zeit kümmern
 // beim Zeitablauf ergebnisse absenden
 
-import { Player, PlaylistElem } from "./datatypes";
+import { chapterProps, Player, PlaylistElem } from "./datatypes";
 import { getIO } from "./server";
 import { generateBooksList } from "./utils";
 import { VerseHandler } from "./verses";
 
 export class Room {
-    //add admin
+    //make better admin
+    admin: string
     id: string
     players: Map<string, Player> = new Map()
     history: Array<Array<number>>
@@ -17,10 +18,13 @@ export class Room {
     timeLeft: number
     countdown: NodeJS.Timeout = null
     vh: VerseHandler
+    private bibleP: Array<chapterProps>
 
-    constructor(id: string) {
+    constructor(id: string, admin: string) {
         this.id = id
+        this.admin = admin
         this.vh = new VerseHandler()
+        this.bibleP = this.vh.generateBibleProps()
     }
 
     //TODO: build game loop
@@ -75,11 +79,7 @@ export class Room {
             }
 
             results.push(resElem)
-            // TODO: send result
-            // getIO().to(this.id).emit('tipp income', {eval})
         });
-        // TODO: better solution, just points maybe
-        // getIO().to(this.id).emit('finish verse', this.players)
         return results
     }
 
@@ -121,6 +121,10 @@ export class Room {
         const verse = v != null ? v : "Aktuell ist noch kein Vers vorhanden"
         return(verse)
     }
+    
+    public getBibleProps() {
+        return this.bibleP
+    }
 
     public handleGuess(playerId: string, guess: [number, number, number]) {
         let msg = ""
@@ -128,9 +132,11 @@ export class Room {
         if (player.allowedToSend) {
             const points = this.vh.calculatePoints(guess)
             player.allowedToSend = false
+            player.history.push(guess)
             msg = this.vh.stringifyverseList(guess) + " wurde gesendet."
         } 
         else { 
+            // TODO: prüfung ob es eine history gibt um eventuelle Fehler zu vermeiden
             // @ts-ignore
             const verse = this.vh.stringifyverseList(player.history.at(-1))
             msg = verse + " wurde bereits gesendet. Nur der die erste Einsendung wird gewertet"

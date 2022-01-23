@@ -1,16 +1,26 @@
 <script>
-    import { User } from "../stores";
+    import { User, socket, bible } from "../stores";
     import Button from "./Button.svelte";
 
-    let text = "";
+    let num = null;
     let btnDisabled = true;
-    let min = 2;
+    let min = 1000000;
+    let max = 9999999;
     let message;
 
+    function getUUID() {
+        if (localStorage.getItem("userID") === null) {
+            //uuidv4() is right even if it thinks it is not
+            const userID = uuidv4();
+            localStorage.setItem("userID", userID);
+        }
+        return localStorage.getItem("userID");
+    };
+
     const handleInput = () => {
-        console.log(text.trim())
-        if (text.trim().length < min) {
-            message = `Username must be at least ${min} characters`;
+        console.log(num);
+        if (num < min || num > max) {
+            message = `Game ID must be ${min.toString().length} characters`;
             btnDisabled = true;
         } else {
             message = null;
@@ -18,46 +28,87 @@
         }
     };
 
-    const handleSubmit = (test) => {
-        console.log(test)
-        if (text.trim().length >= min) {
+    function handleJoinGame() {
+        if (num >= min && num <= max) {
+            console.log(num)
             const newUser = {
-                // id: uuidv4(),
-                loggedIn: true,
-                username: text,
+                id: getUUID(),
+                username: 'TestUSer',
+                type: 'user',
+                roomID: num.toString()
             };
             User.update(() => newUser);
-            text = "";
+            $socket.emit('join Room', {rid: $User.roomID, pid: $User.id, sid: $socket.id})
+            num = null;
         }
-    };
+    }
 
-    const socket = io()
-    
-    socket.on("connect", () => {
-        socket.emit('foo')
-    })
-    
-    socket.on("bar", (msg) => {
-        console.log(msg)
-    })
+    function handleCreateGame() {
+        const uuid = getUUID()
+        console.log(uuid);
+
+        $socket.emit("create Room", uuid);
+    }
+
+    $socket.on("connect", () => {
+        $socket.emit("foo");
+    });
+
+    $socket.on("bar", (msg) => {
+        console.log(msg);
+    });
+
+    $socket.on("room created", (msg) => {
+        console.log(msg.roomID);
+        console.log(getUUID());
+        const rid = msg.roomID;
+        const adminUser = {
+            loggedIn: true,
+            id: getUUID(),
+            type: "admin",
+            roomID: rid,
+        };
+        User.update(() => adminUser);
+    });
+
+    $socket.on("joined room", (msg) => {
+        console.log('joined Room', msg.roomID)
+        $User.roomID = msg.roomID
+        $User.loggedIn = true
+        $socket.emit('getBibleProps', {rid: msg.roomID.toString()})
+    });
+
+    $socket.on("roomNotAvailableError", () => {
+        console.log('roomNotAvailableError')
+    });
+
 </script>
 
 <div>
     <header>
-        <h2>HELLO TEST2</h2>
+        <h2>CREATE A GAME</h2>
+        <Button type="submit" on:click={() => handleCreateGame()}>
+            create Game
+        </Button>
     </header>
-    <form on:submit|preventDefault={handleSubmit}>
-        <div class="input-group">
-            <input
-                type="text"
-                bind:value={text}
-                on:input={handleInput}
-                placeholder="Username"
-            />
-            <Button disabled={btnDisabled} type="submit">create</Button>
-            <Button disabled={btnDisabled} type="submit">join</Button>
-        </div>
-    </form>
+
+    <header>
+        <h2>JOIN A GAME</h2>
+    </header>
+
+    <div class="input-group">
+        <input
+            type="number"
+            bind:value={num}
+            on:input={handleInput}
+            placeholder="Game-PIN"
+        />
+        <Button
+            disabled={btnDisabled}
+            type="submit"
+            on:click={() => handleJoinGame()}>join</Button
+        >
+    </div>
     {#if message}
         <div class="message">
             {message}
@@ -69,6 +120,9 @@
     header {
         max-width: 400px;
         margin: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
     header h2 {
         font-size: 22px;

@@ -2,15 +2,17 @@
 exports.__esModule = true;
 exports.generateBooksList = exports.spans = exports.getLengthfromObject = exports.getBible = exports.getRandomNumber = void 0;
 var fs = require("fs");
+var path = require("path");
 function getRandomNumber(max) {
-    return Math.floor(Math.random() * Math.floor(max));
+    return Math.floor(Math.random() * max);
 }
 exports.getRandomNumber = getRandomNumber;
 function getBible(bibleName) {
+    var biblePath = path.join(__dirname, 'bibles');
     var rawdata = (function () {
         switch (bibleName) {
-            case "Schlachter": return fs.readFileSync("de_schlachter-min.json");
-            default: return fs.readFileSync("de_schlachter-min.json");
+            case "Schlachter": return fs.readFileSync(path.join(biblePath, 'de_schlachter-min.json'));
+            default: return fs.readFileSync(path.join(biblePath, 'de_schlachter-min.json'));
         }
     })();
     return JSON.parse(rawdata.toString());

@@ -1,8 +1,8 @@
 import { getBible, getLengthfromObject, getRandomNumber, spans } from "./utils";
-import { PlaylistElem } from "./datatypes";
+import { BibleBook, chapterProps, PlaylistElem } from "./datatypes";
 
 export class VerseHandler{
-    bible : object;
+    bible : Array<BibleBook>;
     availableBooks: Array<number>;
     verse: {list: Array<number>, text: string};
     timeBonus: number;
@@ -11,7 +11,7 @@ export class VerseHandler{
 
     constructor(avBooks: Array<number> = undefined, playL = undefined, playLActive = false) {
         this.bible = getBible();
-        this.availableBooks = avBooks === undefined ? spans(0, getLengthfromObject(this.bible)) : avBooks;
+        this.availableBooks = avBooks === undefined ? spans(0, getLengthfromObject(this.bible) -1) : avBooks;
     }
 
     setAvailableBooks(b : Array<number>) {
@@ -33,6 +33,7 @@ export class VerseHandler{
     }
 
     stringifyverseList(v: Array<number>) {
+        // TODO: evtl überprüfen ob der Array gültig ist
         return this.bible[v[0]].name + " " + (v[1] + 1).toString() + "," + (v[2] + 1).toString();
     }
 
@@ -42,7 +43,7 @@ export class VerseHandler{
         var distance = Math.abs(indexI - indexS);
         var fistPossible = this.getDistance([this.availableBooks[0], 0, 0]);
         var lastBook = this.availableBooks[this.availableBooks.length - 1];
-        var lastKap = this[lastBook].chapters.length - 1;
+        var lastKap = this.bible[lastBook].chapters.length - 1;
         var lastVers = this.bible[lastBook].chapters[lastKap].length - 1;
         var LastPossible = this.getDistance([lastBook, lastKap, lastVers]);
         var distanceFirst = Math.abs(indexS - fistPossible);
@@ -54,6 +55,22 @@ export class VerseHandler{
         points = Math.ceil(points);
         this.timeBonus = (distance == 0) ? this.timeBonus * 0.7 : this.timeBonus;
         return ({ abstand: distance, punkte: points });
+    }
+
+    public generateBibleProps() : Array<chapterProps> {
+        let bibleProps = []
+        for(let book of this.bible) {
+            let chap = []
+            for(let c of book.chapters) {
+                chap.push(c.length)
+            }
+            const temp = {
+                name: book.name,
+                chapterLength: chap
+            }
+            bibleProps.push(temp)
+        }
+        return bibleProps
     }
 
     private getDistance(verse: Array<number>) {

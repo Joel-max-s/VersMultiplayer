@@ -7,7 +7,8 @@ import { getRandomNumber } from "./utils";
 
 const app = express();
 const http = createServer(app);
-const io = new Server(http, { pingTimeout: 120000, pingInterval: 5000});
+http.listen(3000);
+const io = new Server(http, { pingTimeout: 120000, pingInterval: 5000, cors: {origin: "*"}, allowEIO3: true});
 var rooms = new Map<string, Room>()
 
 app.use(express.static('client/public'))
@@ -16,33 +17,45 @@ console.log('JEAH')
 
 io.on("connection", (socket) => {
 
+    console.log('Somebody Connected')
+
     socket.on('foo', () => {
         socket.emit('bar', 'Hello from express :)')
     })
 
 
-    socket.on('create Room', () => {
+    socket.on('create Room', (uuid: string) => {
         // später noch überprüfen ob es die schon gibt
-        var roomID: string = getRandomNumber(10000).toString()
+        var roomID: string = (1000000 + getRandomNumber(8999999)).toString()
         socket.join(roomID.toString())
+        rooms.set(roomID, new Room(roomID, uuid))
         socket.emit('room created', { roomID: roomID })
-        rooms.set(roomID, new Room(roomID))
+        console.log('room Created', roomID)
     })
 
     socket.on("join Room", (msg: { rid: string, pid: string, sid: string }) => {
+        console.log(msg)
         var room: string = msg.rid
         var player: string = msg.pid
         var socketid: string = msg.sid
         if (rooms.has(room)) {
-            rooms.get(room).controlTimer({ time: 20 })
+            // rooms.get(room).controlTimer({ time: 20 })
             rooms.get(room).addPlayer(player, socketid)
             socket.join(room)
             socket.emit('joined room', { roomID: room })
+        }
+        else {
+            socket.emit('roomNotAvailableError')
         }
     })
 
     socket.on('message', (msg: { room: string, text: string }) => {
         io.to(msg.room).emit('message', { text: msg.text })
+    })
+
+    socket.on('getBibleProps', (msg: {rid: string}) => {
+        const props = rooms.get(msg.rid).getBibleProps()
+        socket.emit('bibleProps', props)
     })
 
     socket.on('getVerse', (msg: { rid: string }) => {
@@ -51,14 +64,18 @@ io.on("connection", (socket) => {
     })
 
     socket.on('sendGuess', (msg: { rid: string, pid: string, guess: [number, number, number] }) => {
+        console.log('Got guess \n', msg)
         const res = rooms.get(msg.rid).handleGuess(msg.pid, msg.guess)
-        socket.to(msg.rid).emit('guessProcessed', res)
+        socket.emit('guessProcessed', res)
     })
 
+    //TODO: add that just admin can do this
     socket.on('startVerse', (msg: {rid: string}) => {
+        console.log(msg.rid)
         const verse = rooms.get(msg.rid).startVerse()
-        socket.to(msg.rid).emit('startedVerse', verse)
-        socket.broadcast.to(msg.rid).emit('startedVerse', verse)
+        // socket.emit('startedVerse', verse)
+        io.in(msg.rid).emit('startedVerse', verse)
+        // socket.broadcast.to(msg.rid).emit('startedVerse', verse)
     })
 
     //TODO: add that just admin can do this
@@ -67,8 +84,7 @@ io.on("connection", (socket) => {
         io.in(msg.rid).emit('finishedVerse', res)
     })
 });
-
-http.listen(3000);
+// http.listen(3000);
 
 export function getIO() {
     return io

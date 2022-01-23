@@ -1,14 +1,16 @@
 import * as fs from "fs";
+import * as path from "path";
 
 export function getRandomNumber(max: number){
-    return Math.floor(Math.random() * Math.floor(max))
+    return Math.floor(Math.random() * max)
 }
 
 export function getBible(bibleName? : String) {
+    const biblePath = path.join(__dirname, 'bibles')
     const rawdata = (() => {
         switch (bibleName) {
-            case "Schlachter": return fs.readFileSync("de_schlachter-min.json");
-            default : return fs.readFileSync("de_schlachter-min.json");
+            case "Schlachter": return fs.readFileSync(path.join(biblePath, 'de_schlachter-min.json'));
+            default : return fs.readFileSync(path.join(biblePath, 'de_schlachter-min.json'));
         }
     })();
 

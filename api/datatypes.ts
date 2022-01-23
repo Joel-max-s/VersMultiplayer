@@ -9,11 +9,11 @@ export class Player {
     id: string
     socketid: string
     points: number
-    allowedToSend: boolean
+    allowedToSend: boolean = true
     connected: boolean
     team: number
     room: string
-    history: Array<Array<number>>
+    history: Array<Array<number>> = []
     currentTipPoints: number = 0
 
     constructor(id: string, sid: string) {
@@ -31,4 +31,15 @@ export interface PlaylistElem {
             verses?: Array<number>
         }>
     }>
+}
+
+export interface BibleBook {
+    'abbrev' : string,
+    'chapters': Array<Array<string>>
+    'name': string
+}
+
+export interface chapterProps {
+    'name' : string,
+    'chapterLength': Array<number>
 }

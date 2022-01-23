@@ -10,12 +10,14 @@ var server_1 = require("./server");
 var utils_1 = require("./utils");
 var verses_1 = require("./verses");
 var Room = /** @class */ (function () {
-    function Room(id) {
+    function Room(id, admin) {
         this.players = new Map();
         this.selectedBooks = (0, utils_1.generateBooksList)();
         this.countdown = null;
         this.id = id;
+        this.admin = admin;
         this.vh = new verses_1.VerseHandler();
+        this.bibleP = this.vh.generateBibleProps();
     }
     //TODO: build game loop
     Room.prototype.startVerse = function () {
@@ -104,15 +106,27 @@ var Room = /** @class */ (function () {
         var verse = v != null ? v : "Aktuell ist noch kein Vers vorhanden";
         return (verse);
     };
+    Room.prototype.getBibleProps = function () {
+        return this.bibleP;
+    };
     Room.prototype.handleGuess = function (playerId, guess) {
         var msg = "";
         var player = this.players.get(playerId);
         if (player.allowedToSend) {
             var points = this.vh.calculatePoints(guess);
             player.allowedToSend = false;
+            player.history.push(guess);
             msg = this.vh.stringifyverseList(guess) + " wurde gesendet.";
         }
         else {
+            // TODO: hier wird nen error geschmissen:
+            // TypeError: Cannot read properties of undefined (reading 'at')
+            //     at Room.handleGuess (F:\Programmiertests\VersMultiplayer\api\room.js:122:67)
+            //     at Socket.<anonymous> (F:\Programmiertests\VersMultiplayer\api\server.js:57:38)
+            //     at Socket.emit (node:events:390:28)
+            //     at Socket.emitUntyped (F:\Programmiertests\VersMultiplayer\node_modules\socket.io\dist\typed-events.js:69:22)
+            //     at F:\Programmiertests\VersMultiplayer\node_modules\socket.io\dist\socket.js:466:39
+            //     at processTicksAndRejections (node:internal/process/task_queues:78:11)
             // @ts-ignore
             var verse = this.vh.stringifyverseList(player.history.at(-1));
             msg = verse + " wurde bereits gesendet. Nur der die erste Einsendung wird gewertet";
