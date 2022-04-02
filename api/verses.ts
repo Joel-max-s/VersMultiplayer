@@ -6,25 +6,58 @@ export class VerseHandler{
     availableBooks: Array<number>;
     verse: {list: Array<number>, text: string};
     timeBonus: number;
-    playlist: Array<PlaylistElem>
+    playlist: IterableIterator<[number, PlaylistElem]>
     playlistActive: boolean = false
 
     constructor(avBooks: Array<number> = undefined, playL = undefined, playLActive = false) {
         this.bible = getBible();
         this.availableBooks = avBooks === undefined ? spans(0, getLengthfromObject(this.bible) -1) : avBooks;
+        this.playlist = playL
+        this.playlistActive = playLActive
     }
 
     setAvailableBooks(b : Array<number>) {
         this.availableBooks = b
     }
 
-    generateVerse(options: {config: Array<number>} = {config: this.availableBooks}) {
+    generateVerse() {
+        if (this.playlistActive) {
+            const it = this.playlist.next()
+            const nextElemisAvailable = !it.done
+            if (nextElemisAvailable) {
+                console.log(it.value[1])
+                this.generateVerseFromPlaylistElem(it.value[1])
+                return
+            } else {
+                this.playlistActive = false
+            }
+        }
+        console.log(this.playlistActive)
+        this.generateVerseWithoutPlaylist()
+    }
+
+    private generateVerseWithoutPlaylist(options: {config: Array<number>} = {config: this.availableBooks}) {
         const book : number = options.config[getRandomNumber(options.config.length)];
         const chapter : number = getRandomNumber(getLengthfromObject(this.bible[book].chapters));
         const verse : number = getRandomNumber(getLengthfromObject(this.bible[book].chapters[chapter]));
         const verseAsList : Array<number> = [book, chapter, verse];
         const versString : string = this.toText(verseAsList)
         // return {list : verseAsList, text: versString}
+        this.verse = {list : verseAsList, text: versString}
+    }
+
+    private generateVerseFromPlaylistElem(pe : PlaylistElem) {
+        const selection = pe.selection[getRandomNumber(pe.selection.length)]
+        const book : number = selection.book
+        const chapterSelection = selection.chapters ? selection.chapters[getRandomNumber(selection.chapters.length)] : undefined
+        const chapter = chapterSelection ? chapterSelection.chapter : 
+            getRandomNumber(getLengthfromObject(this.bible[book].chapters))
+        const verseSelection = chapterSelection ? chapterSelection.verses : undefined
+        const verse : number = verseSelection ? verseSelection[getRandomNumber(verseSelection.length)] :
+            getRandomNumber(getLengthfromObject(this.bible[book].chapters[chapter]))
+        
+        const verseAsList : Array<number> = [book, chapter, verse];
+        const versString : string = this.toText(verseAsList)
         this.verse = {list : verseAsList, text: versString}
     }
 

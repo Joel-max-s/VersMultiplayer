@@ -1,8 +1,7 @@
 "use strict";
-// alle Spieler tracken
-// die Verse Senden
-// sich um die Zeit kümmern
-// beim Zeitablauf ergebnisse absenden
+// Histroy vernünftig implementieren
+// Timer verbessern
+// bei Playlisten die Zeit mit einbeziehen
 exports.__esModule = true;
 exports.Room = void 0;
 var datatypes_1 = require("./datatypes");
@@ -19,7 +18,6 @@ var Room = /** @class */ (function () {
         this.vh = new verses_1.VerseHandler();
         this.bibleP = this.vh.generateBibleProps();
     }
-    //TODO: build game loop
     Room.prototype.startVerse = function () {
         this.resetTipPoints();
         this.vh.generateVerse();
@@ -53,22 +51,30 @@ var Room = /** @class */ (function () {
         this.players["delete"](player.id);
     };
     Room.prototype.finishVerse = function () {
+        var _this = this;
         var results = [];
         this.controlTimer({ endTimer: true });
         this.players.forEach(function (player) {
-            player.allowedToSend = false;
+            if (player.allowedToSend) {
+                player.allowedToSend = false;
+                player.history.push([-1, -1, -1]);
+            }
             player.points += player.currentTipPoints;
             var resElem = {
                 "name": player.name,
                 "points": player.points,
                 "currentTipPoints": player.currentTipPoints
             };
+            var playerElem = {
+                "points": player.currentTipPoints,
+                "rightAnswer": _this.vh.verse,
+                // @ts-ignore
+                "guess": player.history.at(-1)
+            };
+            // abgleich ob antwort richtig war
+            (0, server_1.getIO)().to(player.socketid).emit('singeFinishVerseResult', playerElem);
             results.push(resElem);
-            // TODO: send result
-            // getIO().to(this.id).emit('tipp income', {eval})
         });
-        // TODO: better solution, just points maybe
-        // getIO().to(this.id).emit('finish verse', this.players)
         return results;
     };
     Room.prototype.startTimer = function (time) {
@@ -119,19 +125,26 @@ var Room = /** @class */ (function () {
             msg = this.vh.stringifyverseList(guess) + " wurde gesendet.";
         }
         else {
-            // TODO: hier wird nen error geschmissen:
-            // TypeError: Cannot read properties of undefined (reading 'at')
-            //     at Room.handleGuess (F:\Programmiertests\VersMultiplayer\api\room.js:122:67)
-            //     at Socket.<anonymous> (F:\Programmiertests\VersMultiplayer\api\server.js:57:38)
-            //     at Socket.emit (node:events:390:28)
-            //     at Socket.emitUntyped (F:\Programmiertests\VersMultiplayer\node_modules\socket.io\dist\typed-events.js:69:22)
-            //     at F:\Programmiertests\VersMultiplayer\node_modules\socket.io\dist\socket.js:466:39
-            //     at processTicksAndRejections (node:internal/process/task_queues:78:11)
+            // TODO: prüfung ob es eine history gibt um eventuelle Fehler zu vermeiden
             // @ts-ignore
             var verse = this.vh.stringifyverseList(player.history.at(-1));
             msg = verse + " wurde bereits gesendet. Nur der die erste Einsendung wird gewertet";
         }
         return msg;
+    };
+    Room.prototype.loadPlaylist = function (playlist, enablePlaylist) {
+        if (enablePlaylist === void 0) { enablePlaylist = false; }
+        this.vh.playlist = playlist.entries();
+        this.vh.playlistActive = enablePlaylist;
+    };
+    Room.prototype.pausePlaylist = function () {
+        this.vh.playlistActive = false;
+    };
+    Room.prototype.continuePlaylist = function () {
+        this.vh.playlistActive = true;
+    };
+    Room.prototype.setAvailableBooks = function (books) {
+        this.vh.setAvailableBooks(books);
     };
     return Room;
 }());

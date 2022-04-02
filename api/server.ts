@@ -83,6 +83,22 @@ io.on("connection", (socket) => {
         const res = rooms.get(msg.rid).finishVerse()
         io.in(msg.rid).emit('finishedVerse', res)
     })
+
+    //TODO: add that just admin can do this
+    socket.on('setPlaylist', (msg: {rid: string, playlist: Array<PlaylistElem>}) => {
+        console.log(msg.playlist)
+        rooms.get(msg.rid).loadPlaylist(msg.playlist, true)
+    })
+
+    //TODO: add that just admin can do this
+    socket.on('stopPlaylist', (msg: {rid: string}) => {
+        rooms.get(msg.rid).pausePlaylist()
+    })
+
+    //TODO: add that just admin can do this
+    socket.on('stopPlaylist', (msg: {rid: string}) => {
+        rooms.get(msg.rid).continuePlaylist()
+    })
 });
 // http.listen(3000);
 

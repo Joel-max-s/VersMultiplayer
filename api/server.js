@@ -70,6 +70,19 @@ io.on("connection", function (socket) {
         var res = rooms.get(msg.rid).finishVerse();
         io["in"](msg.rid).emit('finishedVerse', res);
     });
+    //TODO: add that just admin can do this
+    socket.on('setPlaylist', function (msg) {
+        console.log(msg.playlist);
+        rooms.get(msg.rid).loadPlaylist(msg.playlist, true);
+    });
+    //TODO: add that just admin can do this
+    socket.on('stopPlaylist', function (msg) {
+        rooms.get(msg.rid).pausePlaylist();
+    });
+    //TODO: add that just admin can do this
+    socket.on('stopPlaylist', function (msg) {
+        rooms.get(msg.rid).continuePlaylist();
+    });
 });
 // http.listen(3000);
 function getIO() {

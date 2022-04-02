@@ -13,7 +13,7 @@ export class Player {
     connected: boolean
     team: number
     room: string
-    history: Array<Array<number>> = []
+    history: Array<HistoryElem> = []
     currentTipPoints: number = 0
 
     constructor(id: string, sid: string) {
@@ -22,12 +22,17 @@ export class Player {
     }
 }
 
+export interface HistoryElem {
+    time : number,
+    guess: [number, number, number]
+}
+
 export interface PlaylistElem {
     time: number
     selection: Array<{
         book: number,
-        chapers?: Array<{
-            chaper: number,
+        chapters?: Array<{
+            chapter: number,
             verses?: Array<number>
         }>
     }>

@@ -1,7 +1,6 @@
-// alle Spieler tracken
-// die Verse Senden
-// sich um die Zeit kümmern
-// beim Zeitablauf ergebnisse absenden
+// Histroy vernünftig implementieren
+// Timer verbessern
+// bei Playlisten die Zeit mit einbeziehen
 
 import { chapterProps, Player, PlaylistElem } from "./datatypes";
 import { getIO } from "./server";
@@ -27,7 +26,6 @@ export class Room {
         this.bibleP = this.vh.generateBibleProps()
     }
 
-    //TODO: build game loop
     public startVerse() {
         this.resetTipPoints()
         this.vh.generateVerse()
@@ -69,7 +67,10 @@ export class Room {
         let results = []
         this.controlTimer({ endTimer: true });
         this.players.forEach(player => {
-            player.allowedToSend = false;
+            if (player.allowedToSend) {
+                player.allowedToSend = false;
+                player.history.push({time: -1, guess: [-1, -1, -1]})
+            }
             player.points += player.currentTipPoints;
 
             const resElem = {
@@ -77,6 +78,16 @@ export class Room {
                 "points" : player.points,
                 "currentTipPoints" : player.currentTipPoints
             }
+
+            const playerElem = {
+                "points": player.currentTipPoints,
+                "rightAnswer": this.vh.verse,
+                // @ts-ignore
+                "guess" : player.history.at(-1)
+            }
+
+            // abgleich ob antwort richtig war
+            getIO().to(player.socketid).emit('singeFinishVerseResult', playerElem)
 
             results.push(resElem)
         });
@@ -132,7 +143,9 @@ export class Room {
         if (player.allowedToSend) {
             const points = this.vh.calculatePoints(guess)
             player.allowedToSend = false
-            player.history.push(guess)
+            
+            // TODO: calculate time
+            player.history.push({time: -1, guess: guess})
             msg = this.vh.stringifyverseList(guess) + " wurde gesendet."
         } 
         else { 
@@ -144,4 +157,20 @@ export class Room {
         return msg
     }
 
+    public loadPlaylist(playlist: Array<PlaylistElem>, enablePlaylist : boolean = false) {
+        this.vh.playlist = playlist.entries()
+        this.vh.playlistActive = enablePlaylist
+    }
+
+    public pausePlaylist() {
+        this.vh.playlistActive = false
+    }
+
+    public continuePlaylist() {
+        this.vh.playlistActive = true
+    }
+
+    public setAvailableBooks(books : Array<number>) {
+        this.vh.setAvailableBooks(books)
+    }
 }

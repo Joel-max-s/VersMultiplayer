@@ -10,11 +10,29 @@ var VerseHandler = /** @class */ (function () {
         this.playlistActive = false;
         this.bible = (0, utils_1.getBible)();
         this.availableBooks = avBooks === undefined ? (0, utils_1.spans)(0, (0, utils_1.getLengthfromObject)(this.bible) - 1) : avBooks;
+        this.playlist = playL;
+        this.playlistActive = playLActive;
     }
     VerseHandler.prototype.setAvailableBooks = function (b) {
         this.availableBooks = b;
     };
-    VerseHandler.prototype.generateVerse = function (options) {
+    VerseHandler.prototype.generateVerse = function () {
+        if (this.playlistActive) {
+            var it = this.playlist.next();
+            var nextElemisAvailable = !it.done;
+            if (nextElemisAvailable) {
+                console.log(it.value[1]);
+                this.generateVerseFromPlaylistElem(it.value[1]);
+                return;
+            }
+            else {
+                this.playlistActive = false;
+            }
+        }
+        console.log(this.playlistActive);
+        this.generateVerseWithoutPlaylist();
+    };
+    VerseHandler.prototype.generateVerseWithoutPlaylist = function (options) {
         if (options === void 0) { options = { config: this.availableBooks }; }
         var book = options.config[(0, utils_1.getRandomNumber)(options.config.length)];
         var chapter = (0, utils_1.getRandomNumber)((0, utils_1.getLengthfromObject)(this.bible[book].chapters));
@@ -24,19 +42,24 @@ var VerseHandler = /** @class */ (function () {
         // return {list : verseAsList, text: versString}
         this.verse = { list: verseAsList, text: versString };
     };
+    VerseHandler.prototype.generateVerseFromPlaylistElem = function (pe) {
+        var selection = pe.selection[(0, utils_1.getRandomNumber)(pe.selection.length)];
+        var book = selection.book;
+        var chapterSelection = selection.chapters ? selection.chapters[(0, utils_1.getRandomNumber)(selection.chapters.length)] : undefined;
+        var chapter = chapterSelection ? chapterSelection.chapter :
+            (0, utils_1.getRandomNumber)((0, utils_1.getLengthfromObject)(this.bible[book].chapters));
+        var verseSelection = chapterSelection ? chapterSelection.verses : undefined;
+        var verse = verseSelection ? verseSelection[(0, utils_1.getRandomNumber)(verseSelection.length)] :
+            (0, utils_1.getRandomNumber)((0, utils_1.getLengthfromObject)(this.bible[book].chapters[chapter]));
+        var verseAsList = [book, chapter, verse];
+        var versString = this.toText(verseAsList);
+        this.verse = { list: verseAsList, text: versString };
+    };
     VerseHandler.prototype.toText = function (v) {
         return this.bible[v[0]].chapters[v[1]][v[2]];
     };
     VerseHandler.prototype.stringifyverseList = function (v) {
-        // TODO: error:
-        // TypeError: Cannot read properties of undefined (reading '0')
-        //     at VerseHandler.stringifyverseList (F:\Programmiertests\VersMultiplayer\api\verses.js:31:28)
-        //     at Room.handleGuess (F:\Programmiertests\VersMultiplayer\api\room.js:130:33)
-        //     at Socket.<anonymous> (F:\Programmiertests\VersMultiplayer\api\server.js:57:38)
-        //     at Socket.emit (node:events:390:28)
-        //     at Socket.emitUntyped (F:\Programmiertests\VersMultiplayer\node_modules\socket.io\dist\typed-events.js:69:22)
-        //     at F:\Programmiertests\VersMultiplayer\node_modules\socket.io\dist\socket.js:466:39
-        //     at processTicksAndRejections (node:internal/process/task_queues:78:11)
+        // TODO: evtl überprüfen ob der Array gültig ist
         return this.bible[v[0]].name + " " + (v[1] + 1).toString() + "," + (v[2] + 1).toString();
     };
     VerseHandler.prototype.calculatePoints = function (is) {
