@@ -1,10 +1,9 @@
 // Histroy vernünftig implementieren
-// Timer verbessern
-// bei Playlisten die Zeit mit einbeziehen
+// Timer verbessern -> so das die duration beim vers mit kommt
 
-import { chapterProps, Player, PlaylistElem } from "./datatypes";
+import { chapterProps, Player, Playlist, PlaylistElem } from "./datatypes";
 import { getIO } from "./server";
-import { generateBooksList } from "./utils";
+import { generateBooksList, getBible } from "./utils";
 import { VerseHandler } from "./verses";
 
 export class Room {
@@ -26,11 +25,13 @@ export class Room {
         this.bibleP = this.vh.generateBibleProps()
     }
 
-    public startVerse() {
+    public startVerse() : {verse: string, time: number} {
         this.resetTipPoints()
-        this.vh.generateVerse()
+        let time = this.vh.generateVerse()
 
-        return this.vh.verse.text       
+        this.controlTimer({time: time})
+
+        return {verse: this.vh.verse.text, time: time}
     }
 
     public stopVerse() {
@@ -87,7 +88,7 @@ export class Room {
             }
 
             // abgleich ob antwort richtig war
-            getIO().to(player.socketid).emit('singeFinishVerseResult', playerElem)
+            getIO().to(player.socketid).emit('singleFinishVerseResult', playerElem)
 
             results.push(resElem)
         });
@@ -96,17 +97,31 @@ export class Room {
 
     private startTimer(time: number) {
         this.timeLeft = time
+
+        getIO().in(this.id).emit('timer', this.timeLeft)
         this.countdown = setInterval(() => {
-            getIO().in(this.id).emit('timer', this.timeLeft + ' Sekunden')
             if (this.timeLeft > 0) this.timeLeft--
             else if (this.timeLeft <= 0) {
                 this.stopTimer()
-                // ergebnisse Senden
+                this.finishVerse()
 
                 //Test
                 console.log(this.players)
             }
         }, 1000)
+
+
+        // this.countdown = setInterval(() => {
+        //     getIO().in(this.id).emit('timer', this.timeLeft)
+        //     if (this.timeLeft > 0) this.timeLeft--
+        //     else if (this.timeLeft <= 0) {
+        //         this.stopTimer()
+        //         // ergebnisse Senden
+
+        //         //Test
+        //         console.log(this.players)
+        //     }
+        // }, 1000)
     }
 
     private changeTimer(time: number) {
@@ -157,8 +172,9 @@ export class Room {
         return msg
     }
 
-    public loadPlaylist(playlist: Array<PlaylistElem>, enablePlaylist : boolean = false) {
-        this.vh.playlist = playlist.entries()
+    public loadPlaylist(playlist: Playlist, enablePlaylist : boolean = false) {
+        this.vh.bible = getBible(playlist.bible)
+        this.vh.playlistElems = playlist.elems.entries()
         this.vh.playlistActive = enablePlaylist
     }
 

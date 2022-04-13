@@ -1,7 +1,7 @@
 import * as express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { Player, PlaylistElem } from "./datatypes";
+import { Player, Playlist, PlaylistElem } from "./datatypes";
 import { Room } from "./room";
 import { getRandomNumber } from "./utils";
 
@@ -39,10 +39,12 @@ io.on("connection", (socket) => {
         var player: string = msg.pid
         var socketid: string = msg.sid
         if (rooms.has(room)) {
+            console.log(`joining room ${room}`)
             // rooms.get(room).controlTimer({ time: 20 })
             rooms.get(room).addPlayer(player, socketid)
             socket.join(room)
             socket.emit('joined room', { roomID: room })
+            console.log('joined')
         }
         else {
             socket.emit('roomNotAvailableError')
@@ -60,7 +62,7 @@ io.on("connection", (socket) => {
 
     socket.on('getVerse', (msg: { rid: string }) => {
         const verse = rooms.get(msg.rid).getCurrentVerse()
-        socket.to(msg.rid).emit('sendVerse', verse)
+        socket.emit('sendVerse', verse)
     })
 
     socket.on('sendGuess', (msg: { rid: string, pid: string, guess: [number, number, number] }) => {
@@ -72,9 +74,9 @@ io.on("connection", (socket) => {
     //TODO: add that just admin can do this
     socket.on('startVerse', (msg: {rid: string}) => {
         console.log(msg.rid)
-        const verse = rooms.get(msg.rid).startVerse()
+        const res = rooms.get(msg.rid).startVerse()
         // socket.emit('startedVerse', verse)
-        io.in(msg.rid).emit('startedVerse', verse)
+        io.in(msg.rid).emit('startedVerse', res.verse, {time : res.time})
         // socket.broadcast.to(msg.rid).emit('startedVerse', verse)
     })
 
@@ -85,7 +87,7 @@ io.on("connection", (socket) => {
     })
 
     //TODO: add that just admin can do this
-    socket.on('setPlaylist', (msg: {rid: string, playlist: Array<PlaylistElem>}) => {
+    socket.on('setPlaylist', (msg: {rid: string, playlist: Playlist}) => {
         console.log(msg.playlist)
         rooms.get(msg.rid).loadPlaylist(msg.playlist, true)
     })
@@ -96,7 +98,7 @@ io.on("connection", (socket) => {
     })
 
     //TODO: add that just admin can do this
-    socket.on('stopPlaylist', (msg: {rid: string}) => {
+    socket.on('continuePlaylist', (msg: {rid: string}) => {
         rooms.get(msg.rid).continuePlaylist()
     })
 });

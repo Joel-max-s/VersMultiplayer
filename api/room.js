@@ -1,7 +1,6 @@
 "use strict";
 // Histroy vernünftig implementieren
-// Timer verbessern
-// bei Playlisten die Zeit mit einbeziehen
+// Timer verbessern -> so das die duration beim vers mit kommt
 exports.__esModule = true;
 exports.Room = void 0;
 var datatypes_1 = require("./datatypes");
@@ -20,8 +19,9 @@ var Room = /** @class */ (function () {
     }
     Room.prototype.startVerse = function () {
         this.resetTipPoints();
-        this.vh.generateVerse();
-        return this.vh.verse.text;
+        var time = this.vh.generateVerse();
+        this.controlTimer({ time: time });
+        return { verse: this.vh.verse.text, time: time };
     };
     Room.prototype.stopVerse = function () {
         this.players.forEach(function (player) {
@@ -57,7 +57,7 @@ var Room = /** @class */ (function () {
         this.players.forEach(function (player) {
             if (player.allowedToSend) {
                 player.allowedToSend = false;
-                player.history.push([-1, -1, -1]);
+                player.history.push({ time: -1, guess: [-1, -1, -1] });
             }
             player.points += player.currentTipPoints;
             var resElem = {
@@ -72,7 +72,7 @@ var Room = /** @class */ (function () {
                 "guess": player.history.at(-1)
             };
             // abgleich ob antwort richtig war
-            (0, server_1.getIO)().to(player.socketid).emit('singeFinishVerseResult', playerElem);
+            (0, server_1.getIO)().to(player.socketid).emit('singleFinishVerseResult', playerElem);
             results.push(resElem);
         });
         return results;
@@ -80,17 +80,27 @@ var Room = /** @class */ (function () {
     Room.prototype.startTimer = function (time) {
         var _this = this;
         this.timeLeft = time;
+        (0, server_1.getIO)()["in"](this.id).emit('timer', this.timeLeft);
         this.countdown = setInterval(function () {
-            (0, server_1.getIO)()["in"](_this.id).emit('timer', _this.timeLeft + ' Sekunden');
             if (_this.timeLeft > 0)
                 _this.timeLeft--;
             else if (_this.timeLeft <= 0) {
                 _this.stopTimer();
-                // ergebnisse Senden
+                _this.finishVerse();
                 //Test
                 console.log(_this.players);
             }
         }, 1000);
+        // this.countdown = setInterval(() => {
+        //     getIO().in(this.id).emit('timer', this.timeLeft)
+        //     if (this.timeLeft > 0) this.timeLeft--
+        //     else if (this.timeLeft <= 0) {
+        //         this.stopTimer()
+        //         // ergebnisse Senden
+        //         //Test
+        //         console.log(this.players)
+        //     }
+        // }, 1000)
     };
     Room.prototype.changeTimer = function (time) {
         if (this.timeLeft + time > 0)
@@ -121,7 +131,8 @@ var Room = /** @class */ (function () {
         if (player.allowedToSend) {
             var points = this.vh.calculatePoints(guess);
             player.allowedToSend = false;
-            player.history.push(guess);
+            // TODO: calculate time
+            player.history.push({ time: -1, guess: guess });
             msg = this.vh.stringifyverseList(guess) + " wurde gesendet.";
         }
         else {
@@ -134,7 +145,8 @@ var Room = /** @class */ (function () {
     };
     Room.prototype.loadPlaylist = function (playlist, enablePlaylist) {
         if (enablePlaylist === void 0) { enablePlaylist = false; }
-        this.vh.playlist = playlist.entries();
+        this.vh.bible = (0, utils_1.getBible)(playlist.bible);
+        this.vh.playlistElems = playlist.elems.entries();
         this.vh.playlistActive = enablePlaylist;
     };
     Room.prototype.pausePlaylist = function () {

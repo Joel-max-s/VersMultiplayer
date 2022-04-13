@@ -11,8 +11,8 @@ function getBible(bibleName) {
     var biblePath = path.join(__dirname, 'bibles');
     var rawdata = (function () {
         switch (bibleName) {
-            case "Schlachter": return fs.readFileSync(path.join(biblePath, 'de_schlachter-min.json'));
-            default: return fs.readFileSync(path.join(biblePath, 'de_schlachter-min.json'));
+            case "Schlachter": return fs.readFileSync(path.join(biblePath, 'de_schlachter.json'));
+            default: return fs.readFileSync(path.join(biblePath, 'de_schlachter.json'));
         }
     })();
     return JSON.parse(rawdata.toString());

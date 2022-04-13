@@ -4,15 +4,15 @@ import { BibleBook, chapterProps, PlaylistElem } from "./datatypes";
 export class VerseHandler{
     bible : Array<BibleBook>;
     availableBooks: Array<number>;
-    verse: {list: Array<number>, text: string};
+    verse: {list: Array<number>, text: string} = {list: [-1, -1, -1], text: "Noch nix da"};
     timeBonus: number;
-    playlist: IterableIterator<[number, PlaylistElem]>
+    playlistElems: IterableIterator<[number, PlaylistElem]>
     playlistActive: boolean = false
 
     constructor(avBooks: Array<number> = undefined, playL = undefined, playLActive = false) {
         this.bible = getBible();
         this.availableBooks = avBooks === undefined ? spans(0, getLengthfromObject(this.bible) -1) : avBooks;
-        this.playlist = playL
+        this.playlistElems = playL
         this.playlistActive = playLActive
     }
 
@@ -22,14 +22,14 @@ export class VerseHandler{
 
     generateVerse() {
         if (this.playlistActive) {
-            const it = this.playlist.next()
+            const it = this.playlistElems.next()
             const nextElemisAvailable = !it.done
             if (nextElemisAvailable) {
                 console.log(it.value[1])
-                this.generateVerseFromPlaylistElem(it.value[1])
-                return
+                return this.generateVerseFromPlaylistElem(it.value[1])
             } else {
                 this.playlistActive = false
+                this.bible = getBible()
             }
         }
         console.log(this.playlistActive)
@@ -59,6 +59,8 @@ export class VerseHandler{
         const verseAsList : Array<number> = [book, chapter, verse];
         const versString : string = this.toText(verseAsList)
         this.verse = {list : verseAsList, text: versString}
+
+        return pe.time
     }
 
     toText(v : Array<number>) : string {

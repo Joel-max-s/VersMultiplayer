@@ -7,10 +7,11 @@ var VerseHandler = /** @class */ (function () {
         if (avBooks === void 0) { avBooks = undefined; }
         if (playL === void 0) { playL = undefined; }
         if (playLActive === void 0) { playLActive = false; }
+        this.verse = { list: [-1, -1, -1], text: "Noch nix da" };
         this.playlistActive = false;
         this.bible = (0, utils_1.getBible)();
         this.availableBooks = avBooks === undefined ? (0, utils_1.spans)(0, (0, utils_1.getLengthfromObject)(this.bible) - 1) : avBooks;
-        this.playlist = playL;
+        this.playlistElems = playL;
         this.playlistActive = playLActive;
     }
     VerseHandler.prototype.setAvailableBooks = function (b) {
@@ -18,15 +19,15 @@ var VerseHandler = /** @class */ (function () {
     };
     VerseHandler.prototype.generateVerse = function () {
         if (this.playlistActive) {
-            var it = this.playlist.next();
+            var it = this.playlistElems.next();
             var nextElemisAvailable = !it.done;
             if (nextElemisAvailable) {
                 console.log(it.value[1]);
-                this.generateVerseFromPlaylistElem(it.value[1]);
-                return;
+                return this.generateVerseFromPlaylistElem(it.value[1]);
             }
             else {
                 this.playlistActive = false;
+                this.bible = (0, utils_1.getBible)();
             }
         }
         console.log(this.playlistActive);
@@ -54,6 +55,7 @@ var VerseHandler = /** @class */ (function () {
         var verseAsList = [book, chapter, verse];
         var versString = this.toText(verseAsList);
         this.verse = { list: verseAsList, text: versString };
+        return pe.time;
     };
     VerseHandler.prototype.toText = function (v) {
         return this.bible[v[0]].chapters[v[1]][v[2]];

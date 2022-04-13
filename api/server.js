@@ -32,10 +32,12 @@ io.on("connection", function (socket) {
         var player = msg.pid;
         var socketid = msg.sid;
         if (rooms.has(room)) {
+            console.log("joining room " + room);
             // rooms.get(room).controlTimer({ time: 20 })
             rooms.get(room).addPlayer(player, socketid);
             socket.join(room);
             socket.emit('joined room', { roomID: room });
+            console.log('joined');
         }
         else {
             socket.emit('roomNotAvailableError');
@@ -50,7 +52,7 @@ io.on("connection", function (socket) {
     });
     socket.on('getVerse', function (msg) {
         var verse = rooms.get(msg.rid).getCurrentVerse();
-        socket.to(msg.rid).emit('sendVerse', verse);
+        socket.emit('sendVerse', verse);
     });
     socket.on('sendGuess', function (msg) {
         console.log('Got guess \n', msg);
@@ -60,9 +62,9 @@ io.on("connection", function (socket) {
     //TODO: add that just admin can do this
     socket.on('startVerse', function (msg) {
         console.log(msg.rid);
-        var verse = rooms.get(msg.rid).startVerse();
+        var res = rooms.get(msg.rid).startVerse();
         // socket.emit('startedVerse', verse)
-        io["in"](msg.rid).emit('startedVerse', verse);
+        io["in"](msg.rid).emit('startedVerse', res.verse, { time: res.time });
         // socket.broadcast.to(msg.rid).emit('startedVerse', verse)
     });
     //TODO: add that just admin can do this
@@ -80,7 +82,7 @@ io.on("connection", function (socket) {
         rooms.get(msg.rid).pausePlaylist();
     });
     //TODO: add that just admin can do this
-    socket.on('stopPlaylist', function (msg) {
+    socket.on('continuePlaylist', function (msg) {
         rooms.get(msg.rid).continuePlaylist();
     });
 });

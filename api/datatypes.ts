@@ -27,8 +27,13 @@ export interface HistoryElem {
     guess: [number, number, number]
 }
 
+export interface Playlist {
+    bible: string,
+    elems: Array<PlaylistElem>
+}
+
 export interface PlaylistElem {
-    time: number
+    time?: number
     selection: Array<{
         book: number,
         chapters?: Array<{
