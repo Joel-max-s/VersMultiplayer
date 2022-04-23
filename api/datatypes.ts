@@ -1,3 +1,5 @@
+import { uniqueNamesGenerator, Config, names } from 'unique-names-generator';
+
 export interface Admin {
     id: string
     socketid: string
@@ -5,10 +7,10 @@ export interface Admin {
 }
 
 export class Player {
-    name: string
+    name: string = uniqueNamesGenerator({dictionaries: [names]})
     id: string
     socketid: string
-    points: number
+    points: number = 0
     allowedToSend: boolean = true
     connected: boolean
     team: number
@@ -52,4 +54,9 @@ export interface BibleBook {
 export interface chapterProps {
     'name' : string,
     'chapterLength': Array<number>
+}
+
+export interface GuessProcessed {
+    guess: [number, number, number],
+    wasFirstGuess: boolean
 }

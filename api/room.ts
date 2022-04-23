@@ -1,7 +1,7 @@
 // Histroy vernünftig implementieren
 // Timer verbessern -> so das die duration beim vers mit kommt
 
-import { chapterProps, Player, Playlist, PlaylistElem } from "./datatypes";
+import { chapterProps, GuessProcessed, Player, Playlist, PlaylistElem } from "./datatypes";
 import { getIO } from "./server";
 import { generateBooksList, getBible } from "./utils";
 import { VerseHandler } from "./verses";
@@ -68,23 +68,32 @@ export class Room {
         let results = []
         this.controlTimer({ endTimer: true });
         this.players.forEach(player => {
+            let distance = -1
+
             if (player.allowedToSend) {
                 player.allowedToSend = false;
                 player.history.push({time: -1, guess: [-1, -1, -1]})
+                player.currentTipPoints = 0;
+            } else {
+                const result = this.vh.calculatePoints(player.history.at(-1).guess)
+                player.currentTipPoints = result.punkte
+                distance = result.abstand
             }
             player.points += player.currentTipPoints;
 
             const resElem = {
                 "name" : player.name,
                 "points" : player.points,
+                "distance" : distance,
                 "currentTipPoints" : player.currentTipPoints
             }
 
             const playerElem = {
                 "points": player.currentTipPoints,
-                "rightAnswer": this.vh.verse,
+                "distance" : distance,
+                "rightAnswer": this.vh.verse.list,
                 // @ts-ignore
-                "guess" : player.history.at(-1)
+                "guess" : player.history.at(-1).guess
             }
 
             // abgleich ob antwort richtig war
@@ -152,24 +161,24 @@ export class Room {
         return this.bibleP
     }
 
-    public handleGuess(playerId: string, guess: [number, number, number]) {
-        let msg = ""
+    public handleGuess(playerId: string, guess: [number, number, number]) : GuessProcessed {
         const player = this.players.get(playerId)
+        let verse = guess;
+        let firstGuess = true;
         if (player.allowedToSend) {
             const points = this.vh.calculatePoints(guess)
             player.allowedToSend = false
             
             // TODO: calculate time
             player.history.push({time: -1, guess: guess})
-            msg = this.vh.stringifyverseList(guess) + " wurde gesendet."
         } 
         else { 
             // TODO: prüfung ob es eine history gibt um eventuelle Fehler zu vermeiden
             // @ts-ignore
-            const verse = this.vh.stringifyverseList(player.history.at(-1))
-            msg = verse + " wurde bereits gesendet. Nur der die erste Einsendung wird gewertet"
+            firstGuess = false
+            verse = player.history.at(-1).guess
         }
-        return msg
+        return { guess: verse, wasFirstGuess: firstGuess}
     }
 
     public loadPlaylist(playlist: Playlist, enablePlaylist : boolean = false) {

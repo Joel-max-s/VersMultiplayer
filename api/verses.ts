@@ -14,6 +14,7 @@ export class VerseHandler{
         this.availableBooks = avBooks === undefined ? spans(0, getLengthfromObject(this.bible) -1) : avBooks;
         this.playlistElems = playL
         this.playlistActive = playLActive
+        this.timeBonus = 0.5
     }
 
     setAvailableBooks(b : Array<number>) {
@@ -73,23 +74,23 @@ export class VerseHandler{
     }
 
     calculatePoints(is : Array<number>) {
-        var indexI = this.getDistance(is);
-        var indexS = this.getDistance(this.verse.list);
-        var distance = Math.abs(indexI - indexS);
-        var fistPossible = this.getDistance([this.availableBooks[0], 0, 0]);
-        var lastBook = this.availableBooks[this.availableBooks.length - 1];
-        var lastKap = this.bible[lastBook].chapters.length - 1;
-        var lastVers = this.bible[lastBook].chapters[lastKap].length - 1;
-        var LastPossible = this.getDistance([lastBook, lastKap, lastVers]);
-        var distanceFirst = Math.abs(indexS - fistPossible);
-        var distanceLast = Math.abs(LastPossible - indexS);
-        var biggestPossibleDistance = distanceFirst > distanceLast ? distanceFirst : distanceLast;
-        var weight = 4000 / biggestPossibleDistance;
-        var points = 4000 - (weight * distance);
-        points = (distance == 0) ? points * (1.5 + (2 * this.timeBonus)) : points * (0.5 + this.timeBonus);
-        points = Math.ceil(points);
+        const indexI = this.getDistance(is);
+        const indexS = this.getDistance(this.verse.list);
+        const distance = Math.abs(indexI - indexS);
+        const fistPossible = this.getDistance([this.availableBooks[0], 0, 0]);
+        const lastBook = this.availableBooks[this.availableBooks.length - 1];
+        const lastKap = this.bible[lastBook].chapters.length - 1;
+        const lastVers = this.bible[lastBook].chapters[lastKap].length - 1;
+        const lastPossible = this.getDistance([lastBook, lastKap, lastVers]);
+        const distanceFirst = Math.abs(indexS - fistPossible);
+        const distanceLast = Math.abs(lastPossible - indexS);
+        const biggestPossibleDistance = distanceFirst > distanceLast ? distanceFirst : distanceLast;
+        const weight = 4000 / biggestPossibleDistance;
+        const pointsWithoutBonus = 4000 - (weight * distance);
+        const pointsWithBonus = (distance == 0) ? pointsWithoutBonus * (1.5 + (2 * this.timeBonus)) : pointsWithoutBonus * (0.5 + this.timeBonus);
+        const pointsRounded = Math.ceil(pointsWithBonus);
         this.timeBonus = (distance == 0) ? this.timeBonus * 0.7 : this.timeBonus;
-        return ({ abstand: distance, punkte: points });
+        return ({ abstand: distance, punkte: pointsRounded });
     }
 
     public generateBibleProps() : Array<chapterProps> {

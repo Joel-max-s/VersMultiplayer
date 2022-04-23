@@ -1,7 +1,6 @@
 import { getBible } from "./utils";
 
 const bible = getBible()
-// console.log(bible)
 
 let smallBible = []
 for(let book of bible) {

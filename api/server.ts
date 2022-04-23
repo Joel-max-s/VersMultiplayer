@@ -68,6 +68,7 @@ io.on("connection", (socket) => {
     socket.on('sendGuess', (msg: { rid: string, pid: string, guess: [number, number, number] }) => {
         console.log('Got guess \n', msg)
         const res = rooms.get(msg.rid).handleGuess(msg.pid, msg.guess)
+        console.log(res)
         socket.emit('guessProcessed', res)
     })
 
@@ -75,9 +76,7 @@ io.on("connection", (socket) => {
     socket.on('startVerse', (msg: {rid: string}) => {
         console.log(msg.rid)
         const res = rooms.get(msg.rid).startVerse()
-        // socket.emit('startedVerse', verse)
         io.in(msg.rid).emit('startedVerse', res.verse, {time : res.time})
-        // socket.broadcast.to(msg.rid).emit('startedVerse', verse)
     })
 
     //TODO: add that just admin can do this

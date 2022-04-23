@@ -13,6 +13,7 @@ var VerseHandler = /** @class */ (function () {
         this.availableBooks = avBooks === undefined ? (0, utils_1.spans)(0, (0, utils_1.getLengthfromObject)(this.bible) - 1) : avBooks;
         this.playlistElems = playL;
         this.playlistActive = playLActive;
+        this.timeBonus = 0.5;
     }
     VerseHandler.prototype.setAvailableBooks = function (b) {
         this.availableBooks = b;
@@ -72,16 +73,16 @@ var VerseHandler = /** @class */ (function () {
         var lastBook = this.availableBooks[this.availableBooks.length - 1];
         var lastKap = this.bible[lastBook].chapters.length - 1;
         var lastVers = this.bible[lastBook].chapters[lastKap].length - 1;
-        var LastPossible = this.getDistance([lastBook, lastKap, lastVers]);
+        var lastPossible = this.getDistance([lastBook, lastKap, lastVers]);
         var distanceFirst = Math.abs(indexS - fistPossible);
-        var distanceLast = Math.abs(LastPossible - indexS);
+        var distanceLast = Math.abs(lastPossible - indexS);
         var biggestPossibleDistance = distanceFirst > distanceLast ? distanceFirst : distanceLast;
         var weight = 4000 / biggestPossibleDistance;
-        var points = 4000 - (weight * distance);
-        points = (distance == 0) ? points * (1.5 + (2 * this.timeBonus)) : points * (0.5 + this.timeBonus);
-        points = Math.ceil(points);
+        var pointsWithoutBonus = 4000 - (weight * distance);
+        var pointsWithBonus = (distance == 0) ? pointsWithoutBonus * (1.5 + (2 * this.timeBonus)) : pointsWithoutBonus * (0.5 + this.timeBonus);
+        var pointsRounded = Math.ceil(pointsWithBonus);
         this.timeBonus = (distance == 0) ? this.timeBonus * 0.7 : this.timeBonus;
-        return ({ abstand: distance, punkte: points });
+        return ({ abstand: distance, punkte: pointsRounded });
     };
     VerseHandler.prototype.generateBibleProps = function () {
         var bibleProps = [];

@@ -32,7 +32,7 @@ io.on("connection", function (socket) {
         var player = msg.pid;
         var socketid = msg.sid;
         if (rooms.has(room)) {
-            console.log("joining room " + room);
+            console.log("joining room ".concat(room));
             // rooms.get(room).controlTimer({ time: 20 })
             rooms.get(room).addPlayer(player, socketid);
             socket.join(room);
@@ -57,15 +57,14 @@ io.on("connection", function (socket) {
     socket.on('sendGuess', function (msg) {
         console.log('Got guess \n', msg);
         var res = rooms.get(msg.rid).handleGuess(msg.pid, msg.guess);
+        console.log(res);
         socket.emit('guessProcessed', res);
     });
     //TODO: add that just admin can do this
     socket.on('startVerse', function (msg) {
         console.log(msg.rid);
         var res = rooms.get(msg.rid).startVerse();
-        // socket.emit('startedVerse', verse)
         io["in"](msg.rid).emit('startedVerse', res.verse, { time: res.time });
-        // socket.broadcast.to(msg.rid).emit('startedVerse', verse)
     });
     //TODO: add that just admin can do this
     socket.on('finishVerse', function (msg) {
