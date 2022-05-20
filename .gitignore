@@ -3,3 +3,5 @@ backup/
 node_modules/
 package-lock.json
 api/*.js
+removed_code
+api/bin
