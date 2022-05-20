@@ -6,7 +6,8 @@ export function getRandomNumber(max: number){
 }
 
 export function getBible(bibleName? : String) {
-    const biblePath = path.join(__dirname, 'bibles')
+    const biblePath = path.resolve('api/bibles')
+    console.log(biblePath)
     const rawdata = (() => {
         switch (bibleName) {
             case "Schlachter": return fs.readFileSync(path.join(biblePath, 'de_schlachter.json'));

@@ -20,7 +20,7 @@
         "test": "tsc api/test.ts",
         "build": "tsc api/server.ts",
         "serve": "node api/server.js",
-        "api": "tsc && node api/server.js",
+        "api": "tsc && node api/bin/server.js",
         "client": "cd client && npm run dev"
     }
 }
