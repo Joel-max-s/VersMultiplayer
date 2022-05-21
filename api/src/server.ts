@@ -23,7 +23,6 @@ io.on("connection", (socket) => {
         socket.emit('bar', 'Hello from express :)')
     })
 
-
     socket.on('create Room', (uuid: string) => {
         // später noch überprüfen ob es die schon gibt
         var roomID: string = (1000000 + getRandomNumber(8999999)).toString()
@@ -76,7 +75,7 @@ io.on("connection", (socket) => {
     socket.on('startVerse', (msg: {rid: string}) => {
         console.log(msg.rid)
         const res = rooms.get(msg.rid).startVerse()
-        io.in(msg.rid).emit('startedVerse', res.verse, {time : res.time})
+        io.in(msg.rid).emit('startedVerse', res)
     })
 
     //TODO: add that just admin can do this

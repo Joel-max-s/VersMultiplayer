@@ -7,7 +7,7 @@ export interface Admin {
 }
 
 export class Player {
-    name: string = uniqueNamesGenerator({dictionaries: [names]})
+    name: string = uniqueNamesGenerator({ dictionaries: [names] })
     id: string
     socketid: string
     points: number = 0
@@ -25,7 +25,7 @@ export class Player {
 }
 
 export interface HistoryElem {
-    time : number,
+    time: number,
     guess: [number, number, number]
 }
 
@@ -35,28 +35,40 @@ export interface Playlist {
 }
 
 export interface PlaylistElem {
-    time?: number
-    selection: Array<{
+    time?: number,
+    selection: PlaylistSelection,
+    available?: PlaylistSelection
+}
+
+export type PlaylistSelection =
+    Array<{
         book: number,
         chapters?: Array<{
             chapter: number,
             verses?: Array<number>
         }>
     }>
-}
+
 
 export interface BibleBook {
-    'abbrev' : string,
+    'abbrev': string,
     'chapters': Array<Array<string>>
     'name': string
 }
 
 export interface chapterProps {
-    'name' : string,
+    'name': string,
     'chapterLength': Array<number>
 }
 
 export interface GuessProcessed {
     guess: [number, number, number],
     wasFirstGuess: boolean
+}
+
+export interface VerseStarted { 
+    verse: string,
+    time?: number,
+    available?: PlaylistSelection,
+    playlistActive: boolean
 }

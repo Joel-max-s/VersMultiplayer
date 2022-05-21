@@ -1,7 +1,7 @@
 // Histroy vernünftig implementieren
 // Timer verbessern -> so das die duration beim vers mit kommt
 
-import { chapterProps, GuessProcessed, Player, Playlist, PlaylistElem } from "./datatypes";
+import { chapterProps, GuessProcessed, Player, Playlist, PlaylistElem, PlaylistSelection, VerseStarted } from "./datatypes";
 import { getIO } from "./server";
 import { generateBooksList, getBible } from "./utils";
 import { VerseHandler } from "./verses";
@@ -25,13 +25,26 @@ export class Room {
         this.bibleP = this.vh.generateBibleProps()
     }
 
-    public startVerse() : {verse: string, time: number} {
+    public startVerse() : VerseStarted {
         this.resetTipPoints()
-        let time = this.vh.generateVerse()
+        const gen = this.vh.generateVerse()
+
+        let time : number
+        let available : PlaylistSelection
+
+        if (gen) {
+            time = gen.time
+            available = gen.available
+        }
 
         this.controlTimer({time: time})
 
-        return {verse: this.vh.verse.text, time: time}
+        return {
+            verse: this.vh.verse.text,
+            time: time,
+            available: available,
+            playlistActive: this.vh.playlistActive
+        }
     }
 
     public stopVerse() {
@@ -151,10 +164,16 @@ export class Room {
         });
     }
 
-    public getCurrentVerse() {
+    public getCurrentVerse() : VerseStarted {
         const v = this.vh.verse.text
-        const verse = v != null ? v : "Aktuell ist noch kein Vers vorhanden"
-        return(verse)
+        const verse = v ?? "Aktuell ist noch kein Vers vorhanden"
+        
+        return {
+            verse : verse,
+            playlistActive: this.vh.playlistActive,
+            time: this.timeLeft == 0 ? -1 : this.timeLeft,
+            available: this.vh.currentPlaylistElem?.available
+        }
     }
     
     public getBibleProps() {
@@ -174,7 +193,6 @@ export class Room {
         } 
         else { 
             // TODO: prüfung ob es eine history gibt um eventuelle Fehler zu vermeiden
-            // @ts-ignore
             firstGuess = false
             verse = player.history.at(-1).guess
         }

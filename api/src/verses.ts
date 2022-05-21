@@ -6,6 +6,7 @@ export class VerseHandler{
     availableBooks: Array<number>;
     verse: {list: Array<number>, text: string} = {list: [-1, -1, -1], text: "Noch nix da"};
     timeBonus: number;
+    currentPlaylistElem: PlaylistElem
     playlistElems: IterableIterator<[number, PlaylistElem]>
     playlistActive: boolean = false
 
@@ -21,13 +22,18 @@ export class VerseHandler{
         this.availableBooks = b
     }
 
+    // if playlist available:
+        // returns time and the available selections a user can make
     generateVerse() {
         if (this.playlistActive) {
             const it = this.playlistElems.next()
             const nextElemisAvailable = !it.done
             if (nextElemisAvailable) {
-                console.log(it.value[1])
-                return this.generateVerseFromPlaylistElem(it.value[1])
+                this.currentPlaylistElem = it.value[1]
+                return {
+                    time: this.generateVerseFromPlaylistElem(this.currentPlaylistElem),
+                    available : this.currentPlaylistElem.available
+                }
             } else {
                 this.playlistActive = false
                 this.bible = getBible()
@@ -43,7 +49,6 @@ export class VerseHandler{
         const verse : number = getRandomNumber(getLengthfromObject(this.bible[book].chapters[chapter]));
         const verseAsList : Array<number> = [book, chapter, verse];
         const versString : string = this.toText(verseAsList)
-        // return {list : verseAsList, text: versString}
         this.verse = {list : verseAsList, text: versString}
     }
 
