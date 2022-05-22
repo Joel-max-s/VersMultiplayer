@@ -1,7 +1,7 @@
 // Histroy vernünftig implementieren
 // Timer verbessern -> so das die duration beim vers mit kommt
 
-import { chapterProps, GuessProcessed, Player, Playlist, PlaylistElem, PlaylistSelection, VerseStarted } from "./datatypes";
+import { chapterProps, GuessProcessed, Player, Playlist, Result, VerseStarted } from "./datatypes";
 import { getIO } from "./server";
 import { generateBooksList, getBible } from "./utils";
 import { VerseHandler } from "./verses";
@@ -11,10 +11,10 @@ export class Room {
     admin: string
     id: string
     players: Map<string, Player> = new Map()
-    history: Array<Array<number>>
+    history: Array<Array<number>> = []
     selectedBooks: Array<number> = generateBooksList()
-    timeLeft: number
-    countdown: NodeJS.Timeout = null
+    timeLeft: number = 0
+    countdown?: NodeJS.Timeout = undefined
     vh: VerseHandler
     private bibleP: Array<chapterProps>
 
@@ -29,8 +29,8 @@ export class Room {
         this.resetTipPoints()
         const gen = this.vh.generateVerse()
 
-        let time : number
-        let available : PlaylistSelection
+        let time = undefined
+        let available = undefined
 
         if (gen) {
             time = gen.time
@@ -68,7 +68,7 @@ export class Room {
 
     public addPlayer(id: string, sid: string) {
         if (this.players.has(id)) {
-            this.players.get(id).socketid = sid
+            this.players.get(id)!.socketid = sid
         }
         this.players.set(id, new Player(id, sid))
     }
@@ -77,8 +77,8 @@ export class Room {
         this.players.delete(player.id)
     }
 
-    public finishVerse() {
-        let results = []
+    public finishVerse() : Array<Result> {
+        let results : Array<Result> = []
         this.controlTimer({ endTimer: true });
         this.players.forEach(player => {
             let distance = -1
@@ -88,7 +88,7 @@ export class Room {
                 player.history.push({time: -1, guess: [-1, -1, -1]})
                 player.currentTipPoints = 0;
             } else {
-                const result = this.vh.calculatePoints(player.history.at(-1).guess)
+                const result = this.vh.calculatePoints(player.history.at(-1)!.guess)
                 player.currentTipPoints = result.punkte
                 distance = result.abstand
             }
@@ -105,8 +105,7 @@ export class Room {
                 "points": player.currentTipPoints,
                 "distance" : distance,
                 "rightAnswer": this.vh.verse.list,
-                // @ts-ignore
-                "guess" : player.history.at(-1).guess
+                "guess" : player.history.at(-1)!.guess
             }
 
             // abgleich ob antwort richtig war
@@ -153,7 +152,7 @@ export class Room {
 
     private stopTimer() {
         clearInterval(this.countdown)
-        this.countdown = null
+        this.countdown = undefined
         this.timeLeft = 0
     }
 
@@ -184,8 +183,8 @@ export class Room {
         const player = this.players.get(playerId)
         let verse = guess;
         let firstGuess = true;
-        if (player.allowedToSend) {
-            const points = this.vh.calculatePoints(guess)
+        if (player?.allowedToSend) {
+            // const points = this.vh.calculatePoints(guess)
             player.allowedToSend = false
             
             // TODO: calculate time
@@ -194,7 +193,7 @@ export class Room {
         else { 
             // TODO: prüfung ob es eine history gibt um eventuelle Fehler zu vermeiden
             firstGuess = false
-            verse = player.history.at(-1).guess
+            verse = player!.history.at(-1)!.guess
         }
         return { guess: verse, wasFirstGuess: firstGuess}
     }
@@ -211,9 +210,5 @@ export class Room {
 
     public continuePlaylist() {
         this.vh.playlistActive = true
-    }
-
-    public setAvailableBooks(books : Array<number>) {
-        this.vh.setAvailableBooks(books)
     }
 }

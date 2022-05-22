@@ -1,7 +1,7 @@
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { Player, Playlist, PlaylistElem } from "./datatypes";
+import { Playlist } from "./datatypes";
 import { Room } from "./room";
 import { getRandomNumber } from "./utils";
 
@@ -9,7 +9,7 @@ const app = express();
 const http = createServer(app);
 http.listen(3000);
 const io = new Server(http, { pingTimeout: 120000, pingInterval: 5000, cors: {origin: "*"}, allowEIO3: true});
-var rooms = new Map<string, Room>()
+const rooms = new Map<string, Room>()
 
 app.use(express.static('client/public'))
 
@@ -40,7 +40,7 @@ io.on("connection", (socket) => {
         if (rooms.has(room)) {
             console.log(`joining room ${room}`)
             // rooms.get(room).controlTimer({ time: 20 })
-            rooms.get(room).addPlayer(player, socketid)
+            rooms.get(room)!.addPlayer(player, socketid)
             socket.join(room)
             socket.emit('joined room', { roomID: room })
             console.log('joined')
@@ -55,18 +55,18 @@ io.on("connection", (socket) => {
     })
 
     socket.on('getBibleProps', (msg: {rid: string}) => {
-        const props = rooms.get(msg.rid).getBibleProps()
+        const props = rooms.get(msg.rid)?.getBibleProps()
         socket.emit('bibleProps', props)
     })
 
     socket.on('getVerse', (msg: { rid: string }) => {
-        const verse = rooms.get(msg.rid).getCurrentVerse()
+        const verse = rooms.get(msg.rid)?.getCurrentVerse()
         socket.emit('sendVerse', verse)
     })
 
     socket.on('sendGuess', (msg: { rid: string, pid: string, guess: [number, number, number] }) => {
         console.log('Got guess \n', msg)
-        const res = rooms.get(msg.rid).handleGuess(msg.pid, msg.guess)
+        const res = rooms.get(msg.rid)?.handleGuess(msg.pid, msg.guess)
         console.log(res)
         socket.emit('guessProcessed', res)
     })
@@ -74,30 +74,30 @@ io.on("connection", (socket) => {
     //TODO: add that just admin can do this
     socket.on('startVerse', (msg: {rid: string}) => {
         console.log(msg.rid)
-        const res = rooms.get(msg.rid).startVerse()
+        const res = rooms.get(msg.rid)?.startVerse()
         io.in(msg.rid).emit('startedVerse', res)
     })
 
     //TODO: add that just admin can do this
     socket.on('finishVerse', (msg: {rid: string}) => {
-        const res = rooms.get(msg.rid).finishVerse()
+        const res = rooms.get(msg.rid)?.finishVerse()
         io.in(msg.rid).emit('finishedVerse', res)
     })
 
     //TODO: add that just admin can do this
     socket.on('setPlaylist', (msg: {rid: string, playlist: Playlist}) => {
         console.log(msg.playlist)
-        rooms.get(msg.rid).loadPlaylist(msg.playlist, true)
+        rooms.get(msg.rid)?.loadPlaylist(msg.playlist, true)
     })
 
     //TODO: add that just admin can do this
     socket.on('stopPlaylist', (msg: {rid: string}) => {
-        rooms.get(msg.rid).pausePlaylist()
+        rooms.get(msg.rid)?.pausePlaylist()
     })
 
     //TODO: add that just admin can do this
     socket.on('continuePlaylist', (msg: {rid: string}) => {
-        rooms.get(msg.rid).continuePlaylist()
+        rooms.get(msg.rid)?.continuePlaylist()
     })
 });
 // http.listen(3000);

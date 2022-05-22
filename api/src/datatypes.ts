@@ -1,4 +1,4 @@
-import { uniqueNamesGenerator, Config, names } from 'unique-names-generator';
+import { uniqueNamesGenerator, names } from 'unique-names-generator';
 
 export interface Admin {
     id: string
@@ -12,9 +12,9 @@ export class Player {
     socketid: string
     points: number = 0
     allowedToSend: boolean = true
-    connected: boolean
-    team: number
-    room: string
+    connected: boolean = false
+    team: number = -1
+    room: string = ""
     history: Array<HistoryElem> = []
     currentTipPoints: number = 0
 
@@ -71,4 +71,18 @@ export interface VerseStarted {
     time?: number,
     available?: PlaylistSelection,
     playlistActive: boolean
+}
+
+export type BibleProps = Array<{
+    name: string,
+    chapterLength: Array<number>
+}>
+
+export type Nullable<T> = T | null;
+
+export interface Result {
+    name: string
+    points: number
+    distance: number
+    currentTipPoints: number
 }

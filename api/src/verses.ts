@@ -1,34 +1,20 @@
-import { getBible, getLengthfromObject, getRandomNumber, spans } from "./utils";
-import { BibleBook, chapterProps, PlaylistElem } from "./datatypes";
-import e from "express";
+import { getBible, getLengthfromObject, getRandomNumber } from "./utils";
+import { BibleBook, BibleProps, chapterProps, PlaylistElem } from "./datatypes";
 
 const TIME_BONUS_DECREASE_MULTIPLYER = 0.7
 
 export class VerseHandler{
-    bible : Array<BibleBook>;
-    availableBooks: Array<number>;
+    bible : Array<BibleBook> = getBible();
     verse: {list: Array<number>, text: string} = {list: [-1, -1, -1], text: "Noch nix da"};
-    timeBonus: number;
-    currentPlaylistElem: PlaylistElem
-    playlistElems: IterableIterator<[number, PlaylistElem]>
+    timeBonus: number = 0.5;
+    currentPlaylistElem?: PlaylistElem = undefined
+    playlistElems?: IterableIterator<[number, PlaylistElem]>
     playlistActive: boolean = false
-
-    constructor(avBooks: Array<number> = undefined, playL = undefined, playLActive = false) {
-        this.bible = getBible();
-        this.availableBooks = avBooks === undefined ? spans(0, getLengthfromObject(this.bible) -1) : avBooks;
-        this.playlistElems = playL
-        this.playlistActive = playLActive
-        this.timeBonus = 0.5
-    }
-
-    setAvailableBooks(b : Array<number>) {
-        this.availableBooks = b
-    }
 
     // if playlist available:
         // returns time and the available selections a user can make
     generateVerse() {
-        if (this.playlistActive) {
+        if (this.playlistActive && this.playlistElems) {
             const it = this.playlistElems.next()
             const nextElemisAvailable = !it.done
             if (nextElemisAvailable) {
@@ -46,8 +32,8 @@ export class VerseHandler{
         this.generateVerseWithoutPlaylist()
     }
 
-    private generateVerseWithoutPlaylist(options: {config: Array<number>} = {config: this.availableBooks}) {
-        const book : number = options.config[getRandomNumber(options.config.length)];
+    private generateVerseWithoutPlaylist() {
+        const book : number = this.bible.length;
         const chapter : number = getRandomNumber(getLengthfromObject(this.bible[book].chapters));
         const verse : number = getRandomNumber(getLengthfromObject(this.bible[book].chapters[chapter]));
         const verseAsList : Array<number> = [book, chapter, verse];
@@ -55,7 +41,7 @@ export class VerseHandler{
         this.verse = {list : verseAsList, text: versString}
     }
 
-    private generateVerseFromPlaylistElem(pe : PlaylistElem) {
+    private generateVerseFromPlaylistElem(pe : PlaylistElem) : number {
         const selection = pe.selection[getRandomNumber(pe.selection.length)]
         const book : number = selection.book
         const chapterSelection = selection.chapters ? selection.chapters[getRandomNumber(selection.chapters.length)] : undefined
@@ -69,7 +55,7 @@ export class VerseHandler{
         const versString : string = this.toText(verseAsList)
         this.verse = {list : verseAsList, text: versString}
 
-        return pe.time
+        return pe.time ?? -1
     }
 
     toText(v : Array<number>) : string {
@@ -101,7 +87,7 @@ export class VerseHandler{
     }
 
     public generateBibleProps() : Array<chapterProps> {
-        let bibleProps = []
+        let bibleProps : BibleProps = []
         for(let book of this.bible) {
             let chap = []
             for(let c of book.chapters) {
@@ -117,10 +103,10 @@ export class VerseHandler{
     }
 
     private getFirstPossible() : number {
-        const currentElem = this.currentPlaylistElem.available?.sort((a,b) => a.book - b.book);
+        const currentElem = this.currentPlaylistElem?.available?.sort((a,b) => a.book - b.book);
 
         if (!this.playlistActive || !currentElem) {
-            return this.getDistance([this.availableBooks[0], 0, 0])
+            return this.getDistance([0, 0, 0])
         }
         
         const firstBook = currentElem[0].book
@@ -145,7 +131,7 @@ export class VerseHandler{
     }
 
     private getLastPossible() : number {
-        const currentElem = this.currentPlaylistElem.available?.sort((a,b) => a.book - b.book);
+        const currentElem = this.currentPlaylistElem?.available?.sort((a,b) => a.book - b.book);
 
         let lastBook : number
         let lastChapter : number
@@ -156,17 +142,17 @@ export class VerseHandler{
             lastChapter = this.bible[lastBook].chapters.length - 1
             lastVerse = this.bible[lastBook].chapters[lastChapter].length - 1
         } else {
-            lastBook = currentElem.at(-1).book
+            lastBook = currentElem.at(-1)!.book
 
-            if (currentElem.at(-1).chapters) {
-                const currentChapterElem = currentElem.at(-1).chapters.sort((a,b) => a.chapter - b.chapter)
-                lastChapter = currentChapterElem.at(-1).chapter
+            if (currentElem.at(-1)!.chapters!) {
+                const currentChapterElem = currentElem.at(-1)!.chapters!.sort((a,b) => a.chapter - b.chapter)
+                lastChapter = currentChapterElem.at(-1)!.chapter
     
-                if (currentChapterElem.at(-1).verses) {
-                    const currentVerseElem = currentChapterElem.at(-1).verses.sort((a,b) => a - b)
-                    lastVerse = currentVerseElem.at(-1)
+                if (currentChapterElem.at(-1)!.verses) {
+                    const currentVerseElem = currentChapterElem.at(-1)!.verses!.sort((a,b) => a - b)
+                    lastVerse = currentVerseElem.at(-1)!
                 } else {
-                    lastVerse = this.bible[lastBook].chapters[lastVerse].length - 1
+                    lastVerse = this.bible[lastBook].chapters[lastChapter].length - 1
                 }
     
             } else {
@@ -179,7 +165,7 @@ export class VerseHandler{
 
     // TODO: look again into it
     private getDistance(verse: Array<number>) {
-        const currentElem = this.currentPlaylistElem.available?.sort((a,b) => a.book - b.book);
+        const currentElem = this.currentPlaylistElem?.available?.sort((a,b) => a.book - b.book);
         const bookIndex = this.playlistActive && currentElem ? currentElem.findIndex(e => e.book == verse[0]) : verse[0]
         const bookNumber = this.playlistActive && currentElem ? currentElem[bookIndex].book : bookIndex
 
@@ -187,7 +173,7 @@ export class VerseHandler{
 
         for(let i = 0; i < bookIndex; i++) {
             if (this.playlistActive && currentElem && currentElem[i].chapters) {
-                currentElem[i].chapters.sort((a,b) => (a.chapter - b.chapter)).forEach(c => {
+                currentElem[i].chapters!.sort((a,b) => (a.chapter - b.chapter)).forEach(c => {
                     distance += c.verses ? 
                         c.verses.length : 
                         this.bible[currentElem[i].book].chapters[c.chapter].length
@@ -201,19 +187,19 @@ export class VerseHandler{
         }
 
         if (this.playlistActive && currentElem && currentElem[bookIndex].chapters) {
-            const currentChapterElem = currentElem[bookIndex].chapters
+            const currentChapterElem = currentElem[bookIndex].chapters!
             const chapterIndex = currentChapterElem
                 .sort((a,b) => (a.chapter - b.chapter))
                 .findIndex(e => e.chapter == verse[1])
 
             for(let i = 0; i < chapterIndex; i++) {
                 distance += currentChapterElem[i].verses ?
-                    currentChapterElem[i].verses.length :
+                    currentChapterElem[i].verses!.length :
                     this.bible[bookNumber].chapters[currentChapterElem[i].chapter].length;
             }
 
             distance += currentChapterElem[chapterIndex]?.verses ?
-                currentChapterElem[chapterIndex].verses
+                currentChapterElem[chapterIndex].verses!
                     .sort((a,b) => a - b)
                     .findIndex(v => v == verse[2]) :
                 verse[2]
