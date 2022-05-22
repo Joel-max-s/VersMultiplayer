@@ -1,5 +1,6 @@
 import { getBible, getLengthfromObject, getRandomNumber, spans } from "./utils";
 import { BibleBook, chapterProps, PlaylistElem } from "./datatypes";
+import e from "express";
 
 export class VerseHandler{
     bible : Array<BibleBook>;
@@ -78,17 +79,24 @@ export class VerseHandler{
         return this.bible[v[0]].name + " " + (v[1] + 1).toString() + "," + (v[2] + 1).toString();
     }
 
-    calculatePoints(is : Array<number>) {
-        const indexI = this.getDistance(is);
-        const indexS = this.getDistance(this.verse.list);
-        const distance = Math.abs(indexI - indexS);
+    calculatePoints(is : Array<number>) : {abstand: number, punkte: number} {
+        const distanceIs = this.getDistance(is);
+        const distanceShould = this.getDistance(this.verse.list);
+        const distance = Math.abs(distanceIs - distanceShould);
+
+        if (this.playlistActive) {
+            
+        } else {
+
+        }
+
         const fistPossible = this.getDistance([this.availableBooks[0], 0, 0]);
         const lastBook = this.availableBooks[this.availableBooks.length - 1];
         const lastKap = this.bible[lastBook].chapters.length - 1;
         const lastVers = this.bible[lastBook].chapters[lastKap].length - 1;
         const lastPossible = this.getDistance([lastBook, lastKap, lastVers]);
-        const distanceFirst = Math.abs(indexS - fistPossible);
-        const distanceLast = Math.abs(lastPossible - indexS);
+        const distanceFirst = Math.abs(distanceShould - fistPossible);
+        const distanceLast = Math.abs(lastPossible - distanceShould);
         const biggestPossibleDistance = distanceFirst > distanceLast ? distanceFirst : distanceLast;
         const weight = 4000 / biggestPossibleDistance;
         const pointsWithoutBonus = 4000 - (weight * distance);
@@ -114,25 +122,51 @@ export class VerseHandler{
         return bibleProps
     }
 
+    // TODO: look again into it
     private getDistance(verse: Array<number>) {
-        let distance : number = 0;
-        for (var i = 0; i <= verse[0]; i++) {
-            if (i == verse[0]) {
-                for (var j = 0; j <= verse[1]; j++) {
-                    if (j == verse[1]) {
-                        distance += verse[2];
-                    }
-                    else {
-                        distance += this.bible[i].chapters[j].length
-                    }
-                }
-            }
-            else {
-                for (var j = 0; j < this.bible[i].chapters.length; j++) {
-                    distance += this.bible[i].chapters[j].length
-                }
+        const currentElem = this.currentPlaylistElem.available.sort((a,b) => a.book - b.book);
+        const bookIndex = this.playlistActive ? currentElem.findIndex(e => e.book == verse[0]) : verse[0]
+        const bookNumber = this.playlistActive ? currentElem[bookIndex].book : bookIndex
+
+        let distance = 0;
+
+        for(let i = 0; i < bookIndex; i++) {
+            if (this.playlistActive && currentElem[i].chapters) {
+                currentElem[i].chapters.forEach(c => {
+                    distance += c.verses ? 
+                        c.verses.length : 
+                        this.bible[currentElem[i].book].chapters[c.chapter].length
+                })
+            } else {
+                const currentBook = this.playlistActive ? currentElem[i].book : i
+                this.bible[currentBook].chapters.forEach(c => {
+                    distance += c.length;
+                });
             }
         }
-        return distance;
+
+        if (this.playlistActive && currentElem[bookIndex].chapters) {
+            const currentChapterElem = currentElem[bookIndex].chapters
+            const chapterIndex = currentChapterElem.findIndex(e => e.chapter == verse[1])
+
+            for(let i = 0; i < chapterIndex; i++) {
+                distance += currentChapterElem[i].verses ?
+                    currentChapterElem[i].verses.length :
+                    this.bible[bookNumber].chapters[currentChapterElem[i].chapter].length;
+            }
+
+            distance += currentChapterElem[chapterIndex].verses ?
+                currentChapterElem[chapterIndex].verses.findIndex(v => v == verse[2]) :
+                verse[2]
+
+            return distance
+        } 
+        
+        for(let i = 0; i <= verse[1]; i++) {
+            distance += i == verse[1] ? 
+                verse[2] :
+                this.bible[bookNumber].chapters[i].length;
+        }
+        return distance
     }
 }
