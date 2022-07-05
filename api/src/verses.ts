@@ -15,6 +15,19 @@ export class VerseHandler{
         // returns time and the available selections a user can make
     generateVerse() {
         if (this.playlistActive && this.playlistElems) {
+            if (this.currentPlaylistElem && this.currentPlaylistElem.endless) {
+                return {
+                    time: this.generateVerseFromPlaylistElem(this.currentPlaylistElem),
+                    available : this.currentPlaylistElem.available
+                }
+            } else if (this.currentPlaylistElem && this.currentPlaylistElem.repeat && this.currentPlaylistElem.repeat > 0) {
+                this.currentPlaylistElem.repeat--
+                return {
+                    time: this.generateVerseFromPlaylistElem(this.currentPlaylistElem),
+                    available : this.currentPlaylistElem.available
+                }
+            }
+
             const it = this.playlistElems.next()
             const nextElemisAvailable = !it.done
             if (nextElemisAvailable) {
@@ -33,7 +46,7 @@ export class VerseHandler{
     }
 
     private generateVerseWithoutPlaylist() {
-        const book : number = this.bible.length;
+        const book : number = getRandomNumber(this.bible.length);
         const chapter : number = getRandomNumber(getLengthfromObject(this.bible[book].chapters));
         const verse : number = getRandomNumber(getLengthfromObject(this.bible[book].chapters[chapter]));
         const verseAsList : Array<number> = [book, chapter, verse];

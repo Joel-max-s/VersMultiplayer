@@ -199,6 +199,7 @@ export class Room {
     }
 
     public loadPlaylist(playlist: Playlist, enablePlaylist : boolean = false) {
+        this.vh.currentPlaylistElem = undefined;
         this.vh.bible = getBible(playlist.bible)
         this.vh.playlistElems = playlist.elems.entries()
         this.vh.playlistActive = enablePlaylist

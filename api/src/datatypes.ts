@@ -35,6 +35,8 @@ export interface Playlist {
 }
 
 export interface PlaylistElem {
+    endless?: boolean,
+    repeat?: number,
     time?: number,
     selection: PlaylistSelection,
     available?: PlaylistSelection
