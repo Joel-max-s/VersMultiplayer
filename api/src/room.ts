@@ -138,6 +138,7 @@ export class Room {
         console.log(`changing timer by ${time}`)
         if (this.timeLeft + time > 0)
             this.timeLeft += time
+            getIO().in(this.id).emit('timer', this.timeLeft)
     }
 
     private stopTimer() {
@@ -145,6 +146,7 @@ export class Room {
         clearInterval(this.countdown)
         this.countdown = undefined
         this.timeLeft = 0
+        getIO().in(this.id).emit('timer', -1)
     }
 
     private resetTipPoints() {

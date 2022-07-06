@@ -5,3 +5,4 @@ package-lock.json
 api/*.js
 removed_code
 api/bin
+public/
