@@ -67,11 +67,11 @@ export class Room {
         }
     }
 
-    public addPlayer(id: string, sid: string) {
+    public addPlayer(id: string, sid: string, name?: string) {
         if (this.players.has(id)) {
             this.players.get(id)!.socketid = sid
         }
-        this.players.set(id, new Player(id, sid))
+        this.players.set(id, new Player(id, sid, name))
     }
 
     public removePlayer(player: Player) {
