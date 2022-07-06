@@ -18,9 +18,12 @@ export class Player {
     history: Array<HistoryElem> = []
     currentTipPoints: number = 0
 
-    constructor(id: string, sid: string) {
+    constructor(id: string, sid: string, name?: string) {
         this.id = id
         this.socketid = sid
+        if (name) {
+            this.name = name
+        }
     }
 }
 

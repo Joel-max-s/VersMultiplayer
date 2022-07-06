@@ -32,7 +32,7 @@ io.on("connection", (socket) => {
         console.log('room Created', roomID)
     })
 
-    socket.on("join Room", (msg: { rid: string, pid: string, sid: string }) => {
+    socket.on("join Room", (msg: { rid: string, pid: string, sid: string, name?: string}) => {
         console.log(msg)
         var room: string = msg.rid
         var player: string = msg.pid
@@ -40,7 +40,7 @@ io.on("connection", (socket) => {
         if (rooms.has(room)) {
             console.log(`joining room ${room}`)
             // rooms.get(room).controlTimer({ time: 20 })
-            rooms.get(room)!.addPlayer(player, socketid)
+            rooms.get(room)!.addPlayer(player, socketid, msg.name)
             socket.join(room)
             socket.emit('joined room', { roomID: room })
             console.log('joined')
