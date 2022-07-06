@@ -37,6 +37,7 @@ export class Room {
             available = gen.available
         }
 
+        this.controlTimer({endTimer: true})
         this.controlTimer({time: time})
 
         return {
@@ -55,13 +56,13 @@ export class Room {
 
     // wenn noch kein Timer gestartet wurde einen starten
     // wenn der Timer bereits läuft ihn erhöhen oder verringern, bei bedarf auch stoppen
-    public controlTimer({ time = 0, endTimer = false }: { time?: number, endTimer?: boolean }) {
-        if (this.countdown === null && time > 0) {
+    public controlTimer({ time = 0, endTimer = false}: { time?: number, endTimer?: boolean}) {
+        if (this.countdown == undefined && time > 0) {
             console.log(time)
             this.startTimer(time)
             return
         }
-        else if (this.countdown != null) {
+        else if (this.countdown != undefined) {
             endTimer ? this.stopTimer() : this.changeTimer(time)
         }
     }
@@ -117,6 +118,7 @@ export class Room {
     }
 
     private startTimer(time: number) {
+        console.log(`starting timer with ${time} seconds`)
         this.timeLeft = time
 
         getIO().in(this.id).emit('timer', this.timeLeft)
@@ -130,27 +132,16 @@ export class Room {
                 console.log(this.players)
             }
         }, 1000)
-
-
-        // this.countdown = setInterval(() => {
-        //     getIO().in(this.id).emit('timer', this.timeLeft)
-        //     if (this.timeLeft > 0) this.timeLeft--
-        //     else if (this.timeLeft <= 0) {
-        //         this.stopTimer()
-        //         // ergebnisse Senden
-
-        //         //Test
-        //         console.log(this.players)
-        //     }
-        // }, 1000)
     }
 
     private changeTimer(time: number) {
+        console.log(`changing timer by ${time}`)
         if (this.timeLeft + time > 0)
             this.timeLeft += time
     }
 
     private stopTimer() {
+        console.log('stopping timer')
         clearInterval(this.countdown)
         this.countdown = undefined
         this.timeLeft = 0

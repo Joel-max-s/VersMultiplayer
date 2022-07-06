@@ -99,6 +99,17 @@ io.on("connection", (socket) => {
     socket.on('continuePlaylist', (msg: {rid: string}) => {
         rooms.get(msg.rid)?.continuePlaylist()
     })
+
+    //TODO: add that just admin can do this
+    socket.on('increaseTimer', (msg: {rid: string, time: number}) => {
+        console.log(msg);
+        rooms.get(msg.rid)?.controlTimer({time: msg.time})
+    })
+
+    //TODO: add that just admin can do this
+    socket.on('stopTimer', (msg: {rid: string}) => {
+        rooms.get(msg.rid)?.controlTimer({endTimer: true})
+    })
 });
 // http.listen(3000);
 
