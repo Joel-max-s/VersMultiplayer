@@ -11,7 +11,7 @@ http.listen(3000);
 const io = new Server(http, { pingTimeout: 120000, pingInterval: 5000, cors: {origin: "*"}, allowEIO3: true});
 const rooms = new Map<string, Room>()
 
-app.use(express.static('client/public'))
+app.use(express.static('public'))
 
 console.log('JEAH')
 
