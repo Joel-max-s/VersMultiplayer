@@ -118,8 +118,8 @@ export class Room {
             elems.push({
                 "name" : player.name,
                 "points" : player.points,
-                "distance" : player.history.at(-1)!.distance,
-                "currentTipPoints" : player.history.at(-1)!.points
+                "distance" : player.history.at(-1)?.distance ?? -1,
+                "currentTipPoints" : player.history.at(-1)?.points ?? 0
             })
         })
         return elems;

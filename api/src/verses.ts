@@ -41,7 +41,6 @@ export class VerseHandler{
                 this.bible = getBible()
             }
         }
-        console.log(this.playlistActive)
         this.generateVerseWithoutPlaylist()
     }
 
