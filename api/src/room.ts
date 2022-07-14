@@ -45,7 +45,7 @@ export class Room {
 
         return {
             verse: this.vh.verse.text,
-            time: time,
+            // time: time,
             available: available,
             playlistActive: this.vh.playlistActive
         }
