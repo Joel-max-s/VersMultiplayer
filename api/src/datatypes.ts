@@ -29,7 +29,9 @@ export class Player {
 
 export interface HistoryElem {
     time: number,
-    guess: [number, number, number]
+    guess: [number, number, number],
+    distance: number,
+    points: number
 }
 
 export interface Playlist {

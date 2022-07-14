@@ -43,6 +43,7 @@ io.on("connection", (socket) => {
             rooms.get(room)!.addPlayer(player, socketid, msg.name)
             socket.join(room)
             socket.emit('joined room', { roomID: room })
+            io.in(msg.rid).emit('finishedVerse', rooms.get(room)!.getPlayerStats())
             console.log('joined')
         }
         else {

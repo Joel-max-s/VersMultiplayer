@@ -8,6 +8,8 @@ import { VerseHandler } from "./verses";
 
 export class Room {
     //make better admin
+    verseAlreadFinished = false
+    initalTime = -1
     admin: string
     id: string
     players: Map<string, Player> = new Map()
@@ -26,6 +28,7 @@ export class Room {
     }
 
     public startVerse() : VerseStarted {
+        this.verseAlreadFinished = false;
         this.resetTipPoints()
         const gen = this.vh.generateVerse()
 
@@ -79,54 +82,58 @@ export class Room {
     }
 
     public finishVerse() : Array<Result> {
-        let results : Array<Result> = []
         this.controlTimer({ endTimer: true });
-        this.players.forEach(player => {
-            let distance = -1
+        if (!this.verseAlreadFinished) {
+            this.verseAlreadFinished = true;
+            this.players.forEach(player => {
+                if (player.allowedToSend) {
+                    player.allowedToSend = false;
+                    player.history.push({time: -1, guess: [-1, -1, -1], distance: -1, points: 0})
+                }
+                player.points += player.history.at(-1)!.points
+    
+                const playerElem = {
+                    "points": player.history.at(-1)!.points,
+                    "distance" : player.history.at(-1)!.distance,
+                    "rightAnswer": this.vh.verse.list,
+                    "guess" : player.history.at(-1)!.guess
+                }
+    
+                // abgleich ob antwort richtig war
+                getIO().to(player.socketid).emit('singleFinishVerseResult', playerElem)
+            });
+        }
+        return this.getPlayerStats();
+    }
 
-            if (player.allowedToSend) {
-                player.allowedToSend = false;
-                player.history.push({time: -1, guess: [-1, -1, -1]})
-                player.currentTipPoints = 0;
-            } else {
-                const result = this.vh.calculatePoints(player.history.at(-1)!.guess)
-                player.currentTipPoints = result.punkte
-                distance = result.abstand
-            }
-            player.points += player.currentTipPoints;
-
-            const resElem = {
+    // TODO
+    public getPlayerStats() : Array<Result> {
+        let elems : Array<Result> = []
+        this.players.forEach(player  => {
+            elems.push({
                 "name" : player.name,
                 "points" : player.points,
-                "distance" : distance,
-                "currentTipPoints" : player.currentTipPoints
-            }
-
-            const playerElem = {
-                "points": player.currentTipPoints,
-                "distance" : distance,
-                "rightAnswer": this.vh.verse.list,
-                "guess" : player.history.at(-1)!.guess
-            }
-
-            // abgleich ob antwort richtig war
-            getIO().to(player.socketid).emit('singleFinishVerseResult', playerElem)
-
-            results.push(resElem)
-        });
-        return results
+                "distance" : player.history.at(-1)!.distance,
+                "currentTipPoints" : player.history.at(-1)!.points
+            })
+        })
+        return elems;
     }
 
     private startTimer(time: number) {
         console.log(`starting timer with ${time} seconds`)
         this.timeLeft = time
+        this.initalTime = time
 
-        getIO().in(this.id).emit('timer', this.timeLeft)
         this.countdown = setInterval(() => {
-            if (this.timeLeft > 0) this.timeLeft--
+            if (this.timeLeft > 0) {
+                getIO().in(this.id).emit('timer', {timeLeft: this.timeLeft, initialTime: this.initalTime})
+                this.timeLeft--
+            }
             else if (this.timeLeft <= 0) {
                 this.stopTimer()
-                this.finishVerse()
+                const res = this.finishVerse()
+                getIO().in(this.id).emit('finishedVerse', res)
 
                 //Test
                 console.log(this.players)
@@ -136,9 +143,13 @@ export class Room {
 
     private changeTimer(time: number) {
         console.log(`changing timer by ${time}`)
-        if (this.timeLeft + time > 0)
+        if (this.timeLeft + time > 0) {
             this.timeLeft += time
-            getIO().in(this.id).emit('timer', this.timeLeft)
+            this.initalTime += time
+            getIO().in(this.id).emit('timer', {timeLeft: this.timeLeft, initialTime: this.initalTime})
+        }
+
+            
     }
 
     private stopTimer() {
@@ -146,7 +157,7 @@ export class Room {
         clearInterval(this.countdown)
         this.countdown = undefined
         this.timeLeft = 0
-        getIO().in(this.id).emit('timer', -1)
+        getIO().in(this.id).emit('timer', {timeLeft: -1, initialTime: this.initalTime})
     }
 
     private resetTipPoints() {
@@ -177,11 +188,11 @@ export class Room {
         let verse = guess;
         let firstGuess = true;
         if (player?.allowedToSend) {
-            // const points = this.vh.calculatePoints(guess)
+            const res = this.vh.calculatePoints(guess)
             player.allowedToSend = false
             
             // TODO: calculate time
-            player.history.push({time: -1, guess: guess})
+            player.history.push({time: -1, guess: guess, distance: res.abstand, points: res.punkte})
         } 
         else { 
             // TODO: prüfung ob es eine history gibt um eventuelle Fehler zu vermeiden
