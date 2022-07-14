@@ -43,6 +43,9 @@ export class Room {
         this.controlTimer({endTimer: true})
         this.controlTimer({time: time})
 
+        console.log(`new verse is: ${this.vh.verse.text}`)
+        console.log(`the verse stands in: ${this.vh.stringifyverseList(this.vh.verse.list)}`)
+
         return {
             verse: this.vh.verse.text,
             // time: time,
@@ -61,7 +64,6 @@ export class Room {
     // wenn der Timer bereits läuft ihn erhöhen oder verringern, bei bedarf auch stoppen
     public controlTimer({ time = 0, endTimer = false}: { time?: number, endTimer?: boolean}) {
         if (this.countdown == undefined && time > 0) {
-            console.log(time)
             this.startTimer(time)
             return
         }
@@ -103,6 +105,9 @@ export class Room {
                 getIO().to(player.socketid).emit('singleFinishVerseResult', playerElem)
             });
         }
+
+        console.log(`finished verse ${this.vh.stringifyverseList(this.vh.verse.list)}`)
+
         return this.getPlayerStats();
     }
 
@@ -121,7 +126,6 @@ export class Room {
     }
 
     private startTimer(time: number) {
-        console.log(`starting timer with ${time} seconds`)
         this.timeLeft = time
         this.initalTime = time
 
@@ -134,30 +138,29 @@ export class Room {
                 this.stopTimer()
                 const res = this.finishVerse()
                 getIO().in(this.id).emit('finishedVerse', res)
-
-                //Test
-                console.log(this.players)
             }
         }, 1000)
+
+        console.log(`starting timer with ${time} seconds`)
     }
 
     private changeTimer(time: number) {
-        console.log(`changing timer by ${time}`)
         if (this.timeLeft + time > 0) {
             this.timeLeft += time
             this.initalTime += time
             getIO().in(this.id).emit('timer', {timeLeft: this.timeLeft, initialTime: this.initalTime})
-        }
 
-            
+            console.log(`changed timer by ${time} seconds`)
+        }
     }
 
     private stopTimer() {
-        console.log('stopping timer')
         clearInterval(this.countdown)
         this.countdown = undefined
         this.timeLeft = 0
         getIO().in(this.id).emit('timer', {timeLeft: -1, initialTime: this.initalTime})
+
+        console.log('stopping timer')
     }
 
     private resetTipPoints() {
@@ -193,11 +196,15 @@ export class Room {
             
             // TODO: calculate time
             player.history.push({time: -1, guess: guess, distance: res.abstand, points: res.punkte})
+
+            console.log(`${player.name} guessed ${this.vh.stringifyverseList(verse)}, the right answer is ${this.vh.stringifyverseList(this.vh.verse.list)}`)
         } 
         else { 
             // TODO: prüfung ob es eine history gibt um eventuelle Fehler zu vermeiden
             firstGuess = false
             verse = player!.history.at(-1)!.guess
+
+            console.log(`${player!.name} guessed ${this.vh.stringifyverseList(guess)} but has already guessed ${this.vh.stringifyverseList(verse)}`)
         }
         return { guess: verse, wasFirstGuess: firstGuess}
     }
@@ -207,13 +214,19 @@ export class Room {
         this.vh.bible = getBible(playlist.bible)
         this.vh.playlistElems = playlist.elems.entries()
         this.vh.playlistActive = enablePlaylist
+
+        console.log(`loaded playlist with ${playlist.elems.length} elements`)
     }
 
     public pausePlaylist() {
         this.vh.playlistActive = false
+
+        console.log('paused current Playlist')
     }
 
     public continuePlaylist() {
         this.vh.playlistActive = true
+
+        console.log('continue current Playlist')
     }
 }
