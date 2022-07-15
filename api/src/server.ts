@@ -47,6 +47,18 @@ io.on("connection", (socket) => {
         }
     })
 
+    socket.on("spectate Room", (msg: {rid: string}) => {
+        if (rooms.has(msg.rid)) {
+            socket.join(msg.rid);
+            socket.emit('joined spectating', {roomID: msg.rid})
+            
+            console.log(`Somebody joined spectating Room ${msg.rid}`)
+        } else {
+            socket.emit('roomNotAvailableError')
+            console.log(`Somebody tryed joining to spectate room ${msg.rid} but room is not available`)
+        }
+    })
+
     socket.on('message', (msg: { room: string, text: string }) => {
         io.to(msg.room).emit('message', { text: msg.text })
     })
