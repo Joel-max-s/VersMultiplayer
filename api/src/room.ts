@@ -74,7 +74,10 @@ export class Room {
 
     public addPlayer(id: string, sid: string, name?: string) {
         if (this.players.has(id)) {
-            this.players.get(id)!.socketid = sid
+            let player = this.players.get(id)
+            player!.socketid = sid;
+            player!.name = name ?? 'unknown'
+            return
         }
         this.players.set(id, new Player(id, sid, name))
     }
