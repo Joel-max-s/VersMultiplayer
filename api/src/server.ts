@@ -51,6 +51,7 @@ io.on("connection", (socket) => {
         if (rooms.has(msg.rid)) {
             socket.join(msg.rid);
             socket.emit('joined spectating', {roomID: msg.rid})
+            io.in(msg.rid).emit('finishedVerse', rooms.get(msg.rid)!.getPlayerStats())
             
             console.log(`Somebody joined spectating Room ${msg.rid}`)
         } else {
