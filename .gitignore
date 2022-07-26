@@ -6,3 +6,5 @@ api/*.js
 removed_code
 api/bin
 public/
+.env
+db.sqlite
