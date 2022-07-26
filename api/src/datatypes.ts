@@ -3,7 +3,6 @@ import { uniqueNamesGenerator, names } from 'unique-names-generator';
 export interface Admin {
     id: string
     socketid: string
-    room: string
 }
 
 export class Player {

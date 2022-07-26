@@ -1,7 +1,7 @@
 // Histroy vernünftig implementieren
 // Timer verbessern -> so das die duration beim vers mit kommt
 
-import { chapterProps, GuessProcessed, Player, Playlist, Result, VerseStarted } from "./datatypes";
+import { Admin, chapterProps, GuessProcessed, Player, Playlist, Result, VerseStarted } from "./datatypes";
 import { getIO } from "./server";
 import { generateBooksList, getBible } from "./utils";
 import { VerseHandler } from "./verses";
@@ -10,7 +10,7 @@ export class Room {
     //make better admin
     verseAlreadFinished = false
     initalTime = -1
-    admin: string
+    admin: Admin
     id: string
     players: Map<string, Player> = new Map()
     history: Array<Array<number>> = []
@@ -20,7 +20,7 @@ export class Room {
     vh: VerseHandler
     private bibleP: Array<chapterProps>
 
-    constructor(id: string, admin: string) {
+    constructor(id: string, admin: Admin) {
         this.id = id
         this.admin = admin
         this.vh = new VerseHandler()
@@ -70,6 +70,14 @@ export class Room {
         else if (this.countdown != undefined) {
             endTimer ? this.stopTimer() : this.changeTimer(time)
         }
+    }
+
+    public rejoinAdmin(newAdmin: Admin) : boolean {
+        if (this.admin.id === newAdmin.id) {
+            this.admin = newAdmin;
+            return true
+        }
+        return false
     }
 
     public addPlayer(id: string, sid: string, name?: string) {

@@ -24,9 +24,23 @@ io.on("connection", (socket) => {
         // später noch überprüfen ob es die schon gibt
         var roomID: string = (1000000 + getRandomNumber(8999999)).toString()
         socket.join(roomID.toString())
-        rooms.set(roomID, new Room(roomID, uuid))
+        rooms.set(roomID, new Room(roomID, {id: uuid, socketid: socket.id}))
         socket.emit('room created', { roomID: roomID })
         console.log(`Room ${roomID} was created`)
+    })
+
+    socket.on('rejoinAdmin', (msg: {pid: string, rid: string}) => {
+        if (rooms.has(msg.rid)) {
+            const room = rooms.get(msg.rid)!
+            if (room.rejoinAdmin({id: msg.pid, socketid: socket.id})) {
+                socket.join(msg.rid)
+                socket.emit('admin rejoined', {roomID: msg.rid})
+                console.log(`admin rejoined room ${msg.rid}`)
+                return
+            }
+        }
+        socket.emit('roomNotAvailableError')
+        console.log(`admin with pid=${msg.pid} is not able/allowed to join room id=${msg.rid}`)
     })
 
     socket.on("join Room", (msg: { rid: string, pid: string, sid: string, name?: string}) => {
