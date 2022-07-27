@@ -1,7 +1,7 @@
 // Histroy vernünftig implementieren
 // Timer verbessern -> so das die duration beim vers mit kommt
 
-import { Admin, chapterProps, GuessProcessed, Player, Playlist, Result, Team, VerseStarted } from "./datatypes";
+import { Admin, chapterProps, GuessProcessed, Player, Playlist, Result, Team, TeamResult, VerseStarted } from "./datatypes";
 import { getIO } from "./server";
 import { generateBooksList, getBible } from "./utils";
 import { VerseHandler } from "./verses";
@@ -61,6 +61,9 @@ export class Room {
     }
 
     public removeTeam(teamId: number) : boolean {
+        this.players.forEach(p => {
+            if(p.team == teamId)  p.team = -1
+        })
         return this.teams.delete(teamId)
     }
 
@@ -68,12 +71,37 @@ export class Room {
         if (!this.players.has(playerId)) return false
         if ([...this.teams.values()].some(t => t.members.has(playerId))) return true
 
+        this.players.get(playerId)!.team = teamId
         let res = this.teams.get(teamId)?.members.set(playerId, this.players.get(playerId)!)
         return res ? true : false;
     }
 
     public leaveTeam(teamId: number, playerId: string) : boolean | undefined {
+        if (this.players.has(playerId)) {
+            this.players.get(playerId)!.team = -1;
+        }
         return this.teams.get(teamId)?.members.delete(playerId);
+    }
+
+    private calculateTeamPoints(results: Array<Result>) : Array<TeamResult> {
+        const RATIO = 0.4
+        const teams = [...this.teams.values()]
+        const MIN_PLAYERS = Math.min(...teams.map(t => t.members.size))
+        const BEST_PLAYERS = Math.ceil(MIN_PLAYERS * RATIO)
+        let TeamStats : Array<TeamResult> = []
+
+        this.teams.forEach(t => {
+            const sorted = results.map(r => r.currentTipPoints).sort((a, b) => b - a)
+            let points = 0
+            for (let i = 0; i < BEST_PLAYERS; i++) {
+                points += sorted[i]
+            }
+            t.currentPoints = points
+            t.points += points
+            TeamStats.push({id: t.id, name: t.name, points: t.points, lastPoints: t.currentPoints})
+        })
+
+        return TeamStats
     }
 
 
@@ -105,7 +133,7 @@ export class Room {
         }
     }
 
-    public finishVerse() : Array<Result> {
+    public finishVerse() : {players: Array<Result>, teams: Array<TeamResult>} {
         this.controlTimer({ endTimer: true });
         if (!this.verseAlreadFinished) {
             this.verseAlreadFinished = true;
@@ -127,9 +155,10 @@ export class Room {
                 getIO().to(player.socketid).emit('singleFinishVerseResult', playerElem)
             });
         }
-
+        const playerStats = this.getPlayerStats()
+        const teamStats = this.calculateTeamPoints(playerStats)
         console.log(`finished verse ${this.vh.stringifyverseList(this.vh.verse.list)}`)
-        return this.getPlayerStats();
+        return {players: playerStats, teams: teamStats};
     }
 
     private resetTipPoints() {
@@ -264,7 +293,8 @@ export class Room {
                 "name" : player.name,
                 "points" : player.points,
                 "distance" : player.history.at(-1)?.distance ?? -1,
-                "currentTipPoints" : player.history.at(-1)?.points ?? 0
+                "currentTipPoints" : player.history.at(-1)?.points ?? 0,
+                "team" : player.team
             })
         })
         return elems;

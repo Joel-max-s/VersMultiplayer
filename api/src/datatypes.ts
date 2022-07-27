@@ -12,15 +12,16 @@ export class Player {
     points: number = 0
     allowedToSend: boolean = true
     connected: boolean = false
-    team: number = -1
+    team: number
     room: string = ""
     history: Array<HistoryElem> = []
     currentTipPoints: number = 0
 
-    constructor(id: string, sid: string, name?: string) {
+    constructor(id: string, sid: string, name?: string, team?: number) {
         this.id = id
         this.socketid = sid
         this.name = name ?? uniqueNamesGenerator({ dictionaries: [names] })
+        this.team = team ?? -1
     }
 }
 
@@ -28,6 +29,8 @@ export class Team {
     name: string
     id: number
     members: Map<string, Player>
+    points: number = 0
+    currentPoints: number = 0
 
     constructor(id: number, name: string, members?: Map<string, Player>) {
         this.id = id
@@ -40,7 +43,7 @@ export interface HistoryElem {
     time: number,
     guess: [number, number, number],
     distance: number,
-    points: number
+    points: number,
 }
 
 export interface Playlist {
@@ -101,4 +104,12 @@ export interface Result {
     points: number
     distance: number
     currentTipPoints: number
+    team: number
+}
+
+export interface TeamResult {
+    id: number
+    name: string
+    points: number
+    lastPoints: number
 }
