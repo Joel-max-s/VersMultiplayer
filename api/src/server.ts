@@ -76,23 +76,23 @@ io.on("connection", (socket) => {
 
     // TODO: just admin is allowed to do this
     socket.on("create Team", (msg: {rid: string, pid: string, teamId: number, teamName: string}) => {
-        const res = rooms.get(msg.rid)?.creteTeam(msg.teamId, msg.teamName)
-        res ? socket.emit("created Team", {teamId: msg.teamId}) : socket.emit("teamCreateError")
+        const res = rooms.get(msg.rid)?.creteTeam(msg.teamName)
+        res == undefined ? socket.emit("created Team", {teamId: res}) : socket.emit("teamCreateError")
     })
 
     socket.on("remove Team", (msg: {rid: string, pid: string, teamId: number}) => {
         const res = rooms.get(msg.rid)?.removeTeam(msg.teamId)
-        res ? socket.emit("removed Team", {teamId: msg.teamId}) : socket.emit("teamRemoveError")
+        res == undefined ? socket.emit("removed Team", {teamId: msg.teamId}) : socket.emit("teamRemoveError")
     })
 
     socket.on("join Team", (msg: {rid: string, pid: string, teamId: number}) => {
         const res = rooms.get(msg.rid)?.joinTeam(msg.teamId, msg.pid)
-        res ? socket.emit("joined Team", {teamId: msg.teamId}) : socket.emit("teamJoinError")
+        res == undefined ? socket.emit("joined Team", {teamId: res}) : socket.emit("teamJoinError")
     })
 
     socket.on("leave Team", (msg: {rid: string, pid: string, teamId: number}) => {
         const res = rooms.get(msg.rid)?.leaveTeam(msg.teamId, msg.pid)
-        res ? socket.emit("leaved Team", {teamId: msg.teamId}) : socket.emit("teamLeaveError")
+        res == undefined ? socket.emit("leaved Team", {teamId: msg.teamId}) : socket.emit("teamLeaveError")
     })
 
     socket.on('message', (msg: { room: string, text: string }) => {

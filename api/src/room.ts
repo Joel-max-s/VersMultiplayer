@@ -53,11 +53,13 @@ export class Room {
 
     
     // handle Teams
-    public creteTeam(teamId: number, teamName: string) : boolean {
+    public creteTeam(teamName: string) : number {
+        const ids = [...this.teams.values()].map(t => t.id)
+        const teamId = ids.length > 0 ? Math.max(...ids) : 0
         const team = new Team(teamId, teamName)
-        if (this.teams.has(teamId)) return false
+        if (this.teams.has(teamId)) return -1
         this.teams.set(teamId, team)
-        return true
+        return teamId
     }
 
     public removeTeam(teamId: number) : boolean {
@@ -67,13 +69,15 @@ export class Room {
         return this.teams.delete(teamId)
     }
 
-    public joinTeam(teamId: number, playerId: string) : boolean {
-        if (!this.players.has(playerId)) return false
-        if ([...this.teams.values()].some(t => t.members.has(playerId))) return true
+    public joinTeam(teamId: number, playerId: string) : number {
+        if (!this.players.has(playerId)) return -1
+        this.leaveTeam(teamId, playerId)
 
-        this.players.get(playerId)!.team = teamId
         let res = this.teams.get(teamId)?.members.set(playerId, this.players.get(playerId)!)
-        return res ? true : false;
+        if (res == undefined) return -1
+        
+        this.players.get(playerId)!.team = teamId
+        return res ? teamId : -1;
     }
 
     public leaveTeam(teamId: number, playerId: string) : boolean | undefined {
