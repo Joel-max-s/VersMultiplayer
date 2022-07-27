@@ -6,7 +6,7 @@ export interface Admin {
 }
 
 export class Player {
-    name: string = uniqueNamesGenerator({ dictionaries: [names] })
+    name: string 
     id: string
     socketid: string
     points: number = 0
@@ -20,9 +20,19 @@ export class Player {
     constructor(id: string, sid: string, name?: string) {
         this.id = id
         this.socketid = sid
-        if (name) {
-            this.name = name
-        }
+        this.name = name ?? uniqueNamesGenerator({ dictionaries: [names] })
+    }
+}
+
+export class Team {
+    name: string
+    id: number
+    members: Map<string, Player>
+
+    constructor(id: number, name: string, members?: Map<string, Player>) {
+        this.id = id
+        this.name = name
+        this.members = members ?? new Map()
     }
 }
 

@@ -1,7 +1,7 @@
 // Histroy vernünftig implementieren
 // Timer verbessern -> so das die duration beim vers mit kommt
 
-import { Admin, chapterProps, GuessProcessed, Player, Playlist, Result, VerseStarted } from "./datatypes";
+import { Admin, chapterProps, GuessProcessed, Player, Playlist, Result, Team, VerseStarted } from "./datatypes";
 import { getIO } from "./server";
 import { generateBooksList, getBible } from "./utils";
 import { VerseHandler } from "./verses";
@@ -19,6 +19,7 @@ export class Room {
     countdown?: NodeJS.Timeout = undefined
     vh: VerseHandler
     private bibleP: Array<chapterProps>
+    private teams: Map<number, Team> = new Map()
 
     constructor(id: string, admin: Admin) {
         this.id = id
@@ -27,6 +28,56 @@ export class Room {
         this.bibleP = this.vh.generateBibleProps()
     }
 
+    // handle players
+    public addPlayer(id: string, sid: string, name?: string) {
+        if (this.players.has(id)) {
+            let player = this.players.get(id)
+            player!.socketid = sid;
+            player!.name = name ?? 'unknown'
+            return
+        }
+        this.players.set(id, new Player(id, sid, name))
+    }
+
+    public removePlayer(player: Player) {
+        this.players.delete(player.id)
+    }
+
+    public rejoinAdmin(newAdmin: Admin) : boolean {
+        if (this.admin.id === newAdmin.id) {
+            this.admin = newAdmin;
+            return true
+        }
+        return false
+    }
+
+    
+    // handle Teams
+    public creteTeam(teamId: number, teamName: string) : boolean {
+        const team = new Team(teamId, teamName)
+        if (this.teams.has(teamId)) return false
+        this.teams.set(teamId, team)
+        return true
+    }
+
+    public removeTeam(teamId: number) : boolean {
+        return this.teams.delete(teamId)
+    }
+
+    public joinTeam(teamId: number, playerId: string) : boolean {
+        if (!this.players.has(playerId)) return false
+        if ([...this.teams.values()].some(t => t.members.has(playerId))) return true
+
+        let res = this.teams.get(teamId)?.members.set(playerId, this.players.get(playerId)!)
+        return res ? true : false;
+    }
+
+    public leaveTeam(teamId: number, playerId: string) : boolean | undefined {
+        return this.teams.get(teamId)?.members.delete(playerId);
+    }
+
+
+    // handle verse
     public startVerse() : VerseStarted {
         this.verseAlreadFinished = false;
         this.resetTipPoints()
@@ -54,46 +105,6 @@ export class Room {
         }
     }
 
-    public stopVerse() {
-        this.players.forEach((player: Player) => {
-            player.points += player.currentTipPoints
-        })
-    }
-
-    // wenn noch kein Timer gestartet wurde einen starten
-    // wenn der Timer bereits läuft ihn erhöhen oder verringern, bei bedarf auch stoppen
-    public controlTimer({ time = 0, endTimer = false}: { time?: number, endTimer?: boolean}) {
-        if (this.countdown == undefined && time > 0) {
-            this.startTimer(time)
-            return
-        }
-        else if (this.countdown != undefined) {
-            endTimer ? this.stopTimer() : this.changeTimer(time)
-        }
-    }
-
-    public rejoinAdmin(newAdmin: Admin) : boolean {
-        if (this.admin.id === newAdmin.id) {
-            this.admin = newAdmin;
-            return true
-        }
-        return false
-    }
-
-    public addPlayer(id: string, sid: string, name?: string) {
-        if (this.players.has(id)) {
-            let player = this.players.get(id)
-            player!.socketid = sid;
-            player!.name = name ?? 'unknown'
-            return
-        }
-        this.players.set(id, new Player(id, sid, name))
-    }
-
-    public removePlayer(player: Player) {
-        this.players.delete(player.id)
-    }
-
     public finishVerse() : Array<Result> {
         this.controlTimer({ endTimer: true });
         if (!this.verseAlreadFinished) {
@@ -118,22 +129,54 @@ export class Room {
         }
 
         console.log(`finished verse ${this.vh.stringifyverseList(this.vh.verse.list)}`)
-
         return this.getPlayerStats();
     }
 
-    // TODO
-    public getPlayerStats() : Array<Result> {
-        let elems : Array<Result> = []
-        this.players.forEach(player  => {
-            elems.push({
-                "name" : player.name,
-                "points" : player.points,
-                "distance" : player.history.at(-1)?.distance ?? -1,
-                "currentTipPoints" : player.history.at(-1)?.points ?? 0
-            })
-        })
-        return elems;
+    private resetTipPoints() {
+        this.players.forEach((player: Player) => {
+            player.currentTipPoints = 0;
+            player.allowedToSend = true;
+        });
+    }
+
+    
+    // handle Guess
+    public handleGuess(playerId: string, guess: [number, number, number]) : GuessProcessed {
+        const player = this.players.get(playerId)
+        let verse = guess;
+        let firstGuess = true;
+        if (player?.allowedToSend) {
+            const res = this.vh.calculatePoints(guess)
+            player.allowedToSend = false
+            
+            // TODO: calculate time
+            player.history.push({time: -1, guess: guess, distance: res.abstand, points: res.punkte})
+
+            console.log(`${player.name} guessed ${this.vh.stringifyverseList(verse)}, the right answer is ${this.vh.stringifyverseList(this.vh.verse.list)}`)
+        } 
+        else { 
+            // TODO: prüfung ob es eine history gibt um eventuelle Fehler zu vermeiden
+            firstGuess = false
+            verse = player!.history.at(-1)!.guess
+
+            console.log(`${player!.name} guessed ${this.vh.stringifyverseList(guess)} but has already guessed ${this.vh.stringifyverseList(verse)}`)
+        }
+        return { guess: verse, wasFirstGuess: firstGuess}
+    }
+
+    
+
+    // handle Timer
+    // wenn noch kein Timer gestartet wurde einen starten
+    // wenn der Timer bereits läuft ihn erhöhen oder verringern, bei bedarf auch stoppen
+    public controlTimer({ time = 0, endTimer = false}: { time?: number, endTimer?: boolean}) {
+        if (this.countdown == undefined && time > 0) {
+            this.startTimer(time)
+            return
+        }
+        else if (this.countdown != undefined) {
+            endTimer ? this.stopTimer() : this.changeTimer(time)
+        }
     }
 
     private startTimer(time: number) {
@@ -174,52 +217,7 @@ export class Room {
         console.log('stopping timer')
     }
 
-    private resetTipPoints() {
-        this.players.forEach((player: Player) => {
-            player.currentTipPoints = 0;
-            player.allowedToSend = true;
-        });
-    }
-
-    public getCurrentVerse() : VerseStarted {
-        const v = this.vh.verse.text
-        const verse = v ?? "Aktuell ist noch kein Vers vorhanden"
-        
-        return {
-            verse : verse,
-            playlistActive: this.vh.playlistActive,
-            time: this.timeLeft == 0 ? -1 : this.timeLeft,
-            available: this.vh.currentPlaylistElem?.available
-        }
-    }
-    
-    public getBibleProps() {
-        return this.bibleP
-    }
-
-    public handleGuess(playerId: string, guess: [number, number, number]) : GuessProcessed {
-        const player = this.players.get(playerId)
-        let verse = guess;
-        let firstGuess = true;
-        if (player?.allowedToSend) {
-            const res = this.vh.calculatePoints(guess)
-            player.allowedToSend = false
-            
-            // TODO: calculate time
-            player.history.push({time: -1, guess: guess, distance: res.abstand, points: res.punkte})
-
-            console.log(`${player.name} guessed ${this.vh.stringifyverseList(verse)}, the right answer is ${this.vh.stringifyverseList(this.vh.verse.list)}`)
-        } 
-        else { 
-            // TODO: prüfung ob es eine history gibt um eventuelle Fehler zu vermeiden
-            firstGuess = false
-            verse = player!.history.at(-1)!.guess
-
-            console.log(`${player!.name} guessed ${this.vh.stringifyverseList(guess)} but has already guessed ${this.vh.stringifyverseList(verse)}`)
-        }
-        return { guess: verse, wasFirstGuess: firstGuess}
-    }
-
+    // handle Playlist stuff
     public loadPlaylist(playlist: Playlist, enablePlaylist : boolean = false) {
         this.vh.currentPlaylistElem = undefined;
         this.vh.bible = getBible(playlist.bible)
@@ -239,5 +237,36 @@ export class Room {
         this.vh.playlistActive = true
 
         console.log('continue current Playlist')
+    }
+
+
+    // getter and setter
+    public getBibleProps() {
+        return this.bibleP
+    }
+
+    public getCurrentVerse() : VerseStarted {
+        const v = this.vh.verse.text
+        const verse = v ?? "Aktuell ist noch kein Vers vorhanden"
+        
+        return {
+            verse : verse,
+            playlistActive: this.vh.playlistActive,
+            time: this.timeLeft == 0 ? -1 : this.timeLeft,
+            available: this.vh.currentPlaylistElem?.available
+        }
+    }
+
+    public getPlayerStats() : Array<Result> {
+        let elems : Array<Result> = []
+        this.players.forEach(player  => {
+            elems.push({
+                "name" : player.name,
+                "points" : player.points,
+                "distance" : player.history.at(-1)?.distance ?? -1,
+                "currentTipPoints" : player.history.at(-1)?.points ?? 0
+            })
+        })
+        return elems;
     }
 }
