@@ -55,16 +55,15 @@ export class Room {
     // handle Teams
     public creteTeam(teamName: string) : number {
         const ids = [...this.teams.values()].map(t => t.id)
-        const teamId = ids.length > 0 ? Math.max(...ids) : 0
+        const teamId = ids.length > 0 ? Math.max(...ids) + 1 : 0
         const team = new Team(teamId, teamName)
-        if (this.teams.has(teamId)) return -1
         this.teams.set(teamId, team)
         return teamId
     }
 
     public removeTeam(teamId: number) : boolean {
         this.players.forEach(p => {
-            if(p.team == teamId)  p.team = -1
+            if(p.team == teamId) p.team = -1
         })
         return this.teams.delete(teamId)
     }
@@ -80,19 +79,21 @@ export class Room {
         return res ? teamId : -1;
     }
 
-    public leaveTeam(teamId: number, playerId: string) : boolean | undefined {
+    public leaveTeam(teamId: number, playerId: string) : boolean {
         if (this.players.has(playerId)) {
-            this.players.get(playerId)!.team = -1;
+            this.players.get(playerId)!.team = -1
         }
-        return this.teams.get(teamId)?.members.delete(playerId);
+        if (!this.teams.has(teamId)) {
+            return false
+        }
+        return this.teams.get(teamId)!.members.delete(playerId);
     }
 
-    private calculateTeamPoints(results: Array<Result>) : Array<TeamResult> {
+    private calculateTeamPoints(results: Array<Result>) {
         const RATIO = 0.4
         const teams = [...this.teams.values()]
         const MIN_PLAYERS = Math.min(...teams.map(t => t.members.size))
         const BEST_PLAYERS = Math.ceil(MIN_PLAYERS * RATIO)
-        let TeamStats : Array<TeamResult> = []
 
         this.teams.forEach(t => {
             const sorted = results.map(r => r.currentTipPoints).sort((a, b) => b - a)
@@ -102,10 +103,7 @@ export class Room {
             }
             t.currentPoints = points
             t.points += points
-            TeamStats.push({id: t.id, name: t.name, points: t.points, lastPoints: t.currentPoints})
         })
-
-        return TeamStats
     }
 
 
@@ -137,7 +135,7 @@ export class Room {
         }
     }
 
-    public finishVerse() : {players: Array<Result>, teams: Array<TeamResult>} {
+    public finishVerse() {
         this.controlTimer({ endTimer: true });
         if (!this.verseAlreadFinished) {
             this.verseAlreadFinished = true;
@@ -160,9 +158,8 @@ export class Room {
             });
         }
         const playerStats = this.getPlayerStats()
-        const teamStats = this.calculateTeamPoints(playerStats)
+        this.calculateTeamPoints(playerStats)
         console.log(`finished verse ${this.vh.stringifyverseList(this.vh.verse.list)}`)
-        return {players: playerStats, teams: teamStats};
     }
 
     private resetTipPoints() {
@@ -223,8 +220,9 @@ export class Room {
             }
             else if (this.timeLeft <= 0) {
                 this.stopTimer()
-                const res = this.finishVerse()
-                getIO().in(this.id).emit('finishedVerse', res)
+                this.finishVerse()
+                getIO().in(this.id).emit('finishedVerse', this.getPlayerStats())
+                getIO().in(this.id).emit("availableTeams", this.getTeams())
             }
         }, 1000)
 
@@ -302,5 +300,24 @@ export class Room {
             })
         })
         return elems;
+    }
+
+    public getTeams() : Array<TeamResult> {
+        let elems : Array<TeamResult>  = []
+        this.teams.forEach(t => {
+            elems.push(this.getTeam(t.id)!)
+        })
+        return elems
+    }
+
+    public getTeam(teamId: number) : TeamResult | undefined {
+        const team = this.teams.get(teamId);
+        if (team == undefined) return
+        return {
+            id: team.id,
+            name: team.name,
+            points: team.points,
+            lastPoints: team.currentPoints
+        }
     }
 }

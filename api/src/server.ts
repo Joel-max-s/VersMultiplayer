@@ -75,24 +75,111 @@ io.on("connection", (socket) => {
     })
 
     // TODO: just admin is allowed to do this
-    socket.on("create Team", (msg: {rid: string, pid: string, teamId: number, teamName: string}) => {
-        const res = rooms.get(msg.rid)?.creteTeam(msg.teamName)
-        res == undefined ? socket.emit("created Team", {teamId: res}) : socket.emit("teamCreateError")
+    // TODO: teamName is not allowed to be empty
+    // TODO: safety checks
+    socket.on("create Team", (msg: {rid: string, pid: string, teamName: string}) => {
+        if (!rooms.has(msg.rid)) {
+            socket.emit('roomNotAvailableError')
+            return
+        }
+
+        const room = rooms.get(msg.rid)!
+        const teamId = room.creteTeam(msg.teamName)
+        const createdTeam = room.getTeam(teamId)
+        const teams = room.getTeams()
+        
+        io.in(msg.rid).emit("availableTeams", teams)
+        socket.emit("created Team", createdTeam)
+        console.log(`Created Team with id=${teamId}, name="${msg.teamName}"`)
     })
 
     socket.on("remove Team", (msg: {rid: string, pid: string, teamId: number}) => {
-        const res = rooms.get(msg.rid)?.removeTeam(msg.teamId)
-        res == undefined ? socket.emit("removed Team", {teamId: msg.teamId}) : socket.emit("teamRemoveError")
+        if (!rooms.has(msg.rid)) {
+            socket.emit('roomNotAvailableError')
+            return
+        }
+        
+        const room = rooms.get(msg.rid)!
+        const deletedTeam = room.getTeams().find(t => t.id === msg.teamId)
+        const teamGotDeleted = room.removeTeam(msg.teamId)
+
+        if (deletedTeam == undefined || !teamGotDeleted) {
+            socket.emit("teamRemoveError")
+            return
+        }
+
+        const teams = room.getTeams()
+        io.in(msg.rid).emit("availableTeams", teams)
+        socket.emit("removed Team", deletedTeam)
+        console.log(`Team id=${deletedTeam.id} with name=${deletedTeam.name} got deleted`)
     })
 
     socket.on("join Team", (msg: {rid: string, pid: string, teamId: number}) => {
-        const res = rooms.get(msg.rid)?.joinTeam(msg.teamId, msg.pid)
-        res == undefined ? socket.emit("joined Team", {teamId: res}) : socket.emit("teamJoinError")
+        if (!rooms.has(msg.rid)) {
+            socket.emit('roomNotAvailableError')
+            return
+        }
+
+        const room = rooms.get(msg.rid)!
+        const teamId = room.joinTeam(msg.teamId, msg.pid)
+        const joinedTeam = room.getTeam(teamId)
+
+        if (teamId == -1 || joinedTeam == undefined) {
+            socket.emit("teamJoinError")
+            return
+        }
+
+        socket.emit("joined Team", joinedTeam)
+        console.log(`Player pid=${msg.pid} joined Team teamId=${teamId} with name=${joinedTeam.name}`)
     })
 
     socket.on("leave Team", (msg: {rid: string, pid: string, teamId: number}) => {
-        const res = rooms.get(msg.rid)?.leaveTeam(msg.teamId, msg.pid)
-        res == undefined ? socket.emit("leaved Team", {teamId: msg.teamId}) : socket.emit("teamLeaveError")
+        if (!rooms.has(msg.rid)) {
+            socket.emit('roomNotAvailableError')
+            return
+        }
+
+        const room = rooms.get(msg.rid)!
+        const leftTeam = room.getTeam(msg.teamId)
+        const hasLeftTeam = room.leaveTeam(msg.teamId, msg.pid)
+
+        if (!hasLeftTeam || leftTeam == undefined) {
+            socket.emit("teamLeaveError")
+            return
+        }
+        
+        socket.emit("leaved Team", leftTeam)
+        console.log(`Player id=${msg.pid} left the Team id=${leftTeam.id} with name=${leftTeam.name}`)
+    })
+
+    // if no teams are in the room an empty array gets returned
+    socket.on("getTeams", (msg: {rid: string}) => {
+        if (!rooms.has(msg.rid)) {
+            socket.emit('roomNotAvailableError')
+            return
+        }
+
+        const teams = rooms.get(msg.rid)!.getTeams();
+        socket.emit("availableTeams", teams)
+    })
+
+    // if no teams are in the room the requesting socket gets an error
+    socket.on("requestJoinTeams", (msg: {rid: string, pid:string}) => {
+        if (!rooms.has(msg.rid)) {
+            socket.emit('roomNotAvailableError')
+            return
+        }
+
+        const room = rooms.get(msg.rid)!
+        const teams = room.getTeams();
+
+        if (teams.length < 1) {
+            socket.emit('errorRequestingTeams')
+            return
+        }
+
+        io.in(msg.rid).emit("requestToJoinTeam", teams)
+        console.log(`Den Spielern wurde die Teams gezeigt`)
     })
 
     socket.on('message', (msg: { room: string, text: string }) => {
@@ -122,8 +209,14 @@ io.on("connection", (socket) => {
 
     //TODO: add that just admin can do this
     socket.on('finishVerse', (msg: {rid: string}) => {
-        const res = rooms.get(msg.rid)?.finishVerse()
-        io.in(msg.rid).emit('finishedVerse', res)
+        if (rooms.has(msg.rid)) {
+            const room = rooms.get(msg.rid)!
+            room.finishVerse()
+            io.in(msg.rid).emit('finishedVerse', room.getPlayerStats())
+            io.in(msg.rid).emit('availableTeams', room.getTeams())
+            return
+        }
+        socket.emit('roomNotAvailableError')
     })
 
     //TODO: add that just admin can do this
