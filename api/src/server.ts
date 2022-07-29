@@ -36,6 +36,12 @@ io.on("connection", (socket) => {
                 socket.join(msg.rid)
                 socket.emit('admin rejoined', {roomID: msg.rid})
                 console.log(`admin rejoined room ${msg.rid}`)
+
+                const teams = rooms.get(msg.rid)!.getTeams()
+                setTimeout(() => {
+                    io.in(msg.rid).emit('finishedVerse', rooms.get(msg.rid)!.getPlayerStats())
+                    io.in(msg.rid).emit("availableTeams", teams)
+                }, 1000)
                 return
             }
         }
@@ -43,6 +49,7 @@ io.on("connection", (socket) => {
         console.log(`admin with pid=${msg.pid} is not able/allowed to join room id=${msg.rid}`)
     })
 
+    // TODO: eine Sekunde nach beitritt Team- und Spielinfos schicken
     socket.on("join Room", (msg: { rid: string, pid: string, sid: string, name?: string}) => {
         var room: string = msg.rid
         var player: string = msg.pid
@@ -51,9 +58,13 @@ io.on("connection", (socket) => {
             rooms.get(room)!.addPlayer(player, socketid, msg.name)
             socket.join(room)
             socket.emit('joined room', { roomID: room })
-            io.in(msg.rid).emit('finishedVerse', rooms.get(room)!.getPlayerStats())
+            const teams = rooms.get(room)!.getTeams()
 
-            console.log(`${msg.name} with sockedId=${socketid} and playerId=${player} joined room=${room}`)
+            setTimeout(() => {
+                io.in(msg.rid).emit('finishedVerse', rooms.get(room)!.getPlayerStats())
+                io.in(msg.rid).emit("availableTeams", teams)
+                console.log(`${msg.name} with sockedId=${socketid} and playerId=${player} joined room=${room}`)
+            }, 1000)
         }
         else {
             socket.emit('roomNotAvailableError')
@@ -65,7 +76,12 @@ io.on("connection", (socket) => {
         if (rooms.has(msg.rid)) {
             socket.join(msg.rid);
             socket.emit('joined spectating', {roomID: msg.rid})
-            io.in(msg.rid).emit('finishedVerse', rooms.get(msg.rid)!.getPlayerStats())
+            const teams = rooms.get(msg.rid)!.getTeams()
+
+            setTimeout(() => {
+                io.in(msg.rid).emit('finishedVerse', rooms.get(msg.rid)!.getPlayerStats())
+                io.in(msg.rid).emit("availableTeams", teams)
+            }, 1000)
             
             console.log(`Somebody joined spectating Room ${msg.rid}`)
         } else {
