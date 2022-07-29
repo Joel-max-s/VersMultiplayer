@@ -130,6 +130,7 @@ io.on("connection", (socket) => {
         }
 
         socket.emit("joined Team", joinedTeam)
+        io.in(msg.rid).emit('finishedVerse', room.getPlayerStats())
         console.log(`Player pid=${msg.pid} joined Team teamId=${teamId} with name=${joinedTeam.name}`)
     })
 
