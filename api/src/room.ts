@@ -288,6 +288,8 @@ export class Room {
         }
     }
 
+    // TODO: wenn das in der Runde abgefragt wird kann man die Punkte vom letzten Tipp schon sehen bevor
+    // die Runde "offiziell" ausgewertet wurde.
     public getPlayerStats() : Array<Result> {
         let elems : Array<Result> = []
         this.players.forEach(player  => {
