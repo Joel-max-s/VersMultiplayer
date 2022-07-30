@@ -15,6 +15,8 @@ app.use(express.static('public'))
 
 console.log('JEAH')
 
+// TODO: wenn noch kein Vers da ist und jemand was abschick stürzt alles ab
+// TODO: punkte reseten (das muss der admin können)
 io.on("connection", (socket) => {
     socket.on('foo', () => {
         socket.emit('bar', 'Hello from express :)')
