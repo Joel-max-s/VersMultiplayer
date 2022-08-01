@@ -4,6 +4,8 @@ import { Server } from "socket.io";
 import { Playlist } from "./datatypes";
 import { Room } from "./room";
 import { getRandomNumber } from "./utils";
+import * as path from "path";
+
 
 const app = express();
 const http = createServer(app);
@@ -13,9 +15,13 @@ const rooms = new Map<string, Room>()
 
 app.use(express.static('public'))
 
+app.get('/bible', (_err, res) => {
+    res.status(200);
+    res.sendFile(path.join(__dirname, '../bibles/de_schlachter.json'))
+})
+
 console.log('JEAH')
 
-// TODO: wenn noch kein Vers da ist und jemand was abschick stürzt alles ab
 // TODO: punkte reseten (das muss der admin können)
 io.on("connection", (socket) => {
     socket.on('foo', () => {
@@ -51,7 +57,6 @@ io.on("connection", (socket) => {
         console.log(`admin with pid=${msg.pid} is not able/allowed to join room id=${msg.rid}`)
     })
 
-    // TODO: eine Sekunde nach beitritt Team- und Spielinfos schicken
     socket.on("join Room", (msg: { rid: string, pid: string, sid: string, name?: string}) => {
         var room: string = msg.rid
         var player: string = msg.pid
@@ -261,6 +266,24 @@ io.on("connection", (socket) => {
     //TODO: add that just admin can do this
     socket.on('stopTimer', (msg: {rid: string}) => {
         rooms.get(msg.rid)?.controlTimer({endTimer: true})
+    })
+
+    
+    //TODO: just admin can do this
+    //TODO: test this
+    socket.on('resetPoints', (msg: {rid: string}) => {
+        if (!rooms.has(msg.rid)) {
+            socket.emit('roomNotAvailableError')
+            return
+        }
+
+        const room = rooms.get(msg.rid)!
+        room.resetGame();
+        io.in(msg.rid).emit('pointsResetted')
+        io.in(msg.rid).emit('finishedVerse', room.getPlayerStats())
+        io.in(msg.rid).emit('availableTeams', room.getTeams())
+
+        console.log('The game was resetted')
     })
 });
 

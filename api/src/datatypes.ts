@@ -23,6 +23,13 @@ export class Player {
         this.name = name ?? uniqueNamesGenerator({ dictionaries: [names] })
         this.team = team ?? -1
     }
+
+    public reset() {
+        this.points = 0;
+        this.allowedToSend = false
+        this.history = []
+        this.currentTipPoints = 0
+    }
 }
 
 export class Team {

@@ -75,7 +75,14 @@ export class VerseHandler{
     }
 
     stringifyverseList(v: Array<number>) {
-        // TODO: evtl überprüfen ob der Array gültig ist
+        // TODO: vernünfitige Überprüfung ob der Vers-Guess gültig ist
+        console.log(v)
+        if (v.length != 3 || v[0] < 0 || v[0] > this.bible.length) {
+            console.error('Beim Umwandeln des Guess zu einem Lesbaren String ist ein Error aufgetreten')
+            console.error('Dies liegt vermutlich daran das ein Guess abgesendet wurde bevor ein Bibelver freigegeben wurde.')
+            return 'ERROR, Guess ist nicht gültig'
+        }
+
         return this.bible[v[0]].name + " " + (v[1] + 1).toString() + "," + (v[2] + 1).toString();
     }
 

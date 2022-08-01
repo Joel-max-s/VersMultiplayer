@@ -1,5 +1,5 @@
 // Histroy vernünftig implementieren
-// Timer verbessern -> so das die duration beim vers mit kommt
+// TODO: wenn noch kein Vers geladen ist keine Punkte berechnen
 
 import { Admin, chapterProps, GuessProcessed, Player, Playlist, Result, Team, TeamResult, VerseStarted } from "./datatypes";
 import { getIO } from "./server";
@@ -51,6 +51,15 @@ export class Room {
         return false
     }
 
+
+    // handle Game
+    public resetGame() {
+        this.players.forEach(player => player.reset())
+        this.teams.forEach(team => {
+            team.currentPoints = 0
+            team.points = 0
+        })
+    }
     
     // handle Teams
     public creteTeam(teamName: string) : number {
@@ -89,6 +98,7 @@ export class Room {
         return this.teams.get(teamId)!.members.delete(playerId);
     }
 
+    // TODO: test this
     private calculateTeamPoints(results: Array<Result>) {
         const RATIO = 0.4
         const teams = [...this.teams.values()]
@@ -172,6 +182,7 @@ export class Room {
     
     // handle Guess
     public handleGuess(playerId: string, guess: [number, number, number]) : GuessProcessed {
+        console.log(guess)
         const player = this.players.get(playerId)
         let verse = guess;
         let firstGuess = true;
@@ -188,7 +199,7 @@ export class Room {
             // TODO: prüfung ob es eine history gibt um eventuelle Fehler zu vermeiden
             firstGuess = false
             verse = player!.history.at(-1)!.guess
-
+            
             console.log(`${player!.name} guessed ${this.vh.stringifyverseList(guess)} but has already guessed ${this.vh.stringifyverseList(verse)}`)
         }
         return { guess: verse, wasFirstGuess: firstGuess}
