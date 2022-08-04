@@ -105,8 +105,9 @@ export class Room {
         const MIN_PLAYERS = Math.min(...teams.map(t => t.members.size))
         const BEST_PLAYERS = Math.ceil(MIN_PLAYERS * RATIO)
 
+        console.log(teams)
         this.teams.forEach(t => {
-            const sorted = results.map(r => r.currentTipPoints).sort((a, b) => b - a)
+            const sorted = results.filter(p => p.team === t.id).map(r => r.points).sort((a, b) => b - a)
             let points = 0
             for (let i = 0; i < BEST_PLAYERS; i++) {
                 points += sorted[i]

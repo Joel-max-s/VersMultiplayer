@@ -22,7 +22,6 @@ app.get('/bible', (_err, res) => {
 
 console.log('JEAH')
 
-// TODO: punkte reseten (das muss der admin können)
 io.on("connection", (socket) => {
     socket.on('foo', () => {
         socket.emit('bar', 'Hello from express :)')
