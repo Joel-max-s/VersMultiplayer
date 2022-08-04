@@ -114,7 +114,7 @@ export class Room {
                 points += sorted[i]
             }
             t.currentPoints = points - oldPoints
-            t.points += points
+            t.points = points
         })
     }
 
