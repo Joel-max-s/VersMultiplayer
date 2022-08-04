@@ -109,10 +109,11 @@ export class Room {
         this.teams.forEach(t => {
             const sorted = results.filter(p => p.team === t.id).map(r => r.points).sort((a, b) => b - a)
             let points = 0
+            let oldPoints = t.points
             for (let i = 0; i < BEST_PLAYERS; i++) {
                 points += sorted[i]
             }
-            t.currentPoints = points
+            t.currentPoints = points - oldPoints
             t.points += points
         })
     }
