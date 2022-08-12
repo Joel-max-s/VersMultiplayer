@@ -171,6 +171,7 @@ export class Room {
         }
         const playerStats = this.getPlayerStats()
         this.calculateTeamPoints(playerStats)
+        this.vh.resetTimeBonus()
         console.log(`finished verse ${this.vh.stringifyverseList(this.vh.verse.list)}`)
     }
 

@@ -70,6 +70,10 @@ export class VerseHandler{
         return pe.time ?? -1
     }
 
+    public resetTimeBonus() {
+        this.timeBonus = 0.5
+    }
+
     toText(v : Array<number>) : string {
         return this.bible[v[0]].chapters[v[1]][v[2]];
     }
