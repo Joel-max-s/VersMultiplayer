@@ -29,7 +29,7 @@ io.on("connection", (socket) => {
 
     socket.on('create Room', (uuid: string) => {
         // später noch überprüfen ob es die schon gibt
-        var roomID: string = (1000000 + getRandomNumber(8999999)).toString()
+        var roomID: string = (10 + getRandomNumber(89)).toString()
         socket.join(roomID.toString())
         rooms.set(roomID, new Room(roomID, {id: uuid, socketid: socket.id}))
         socket.emit('room created', { roomID: roomID })
